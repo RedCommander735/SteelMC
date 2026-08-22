@@ -29,5 +29,5 @@ impl BlockBehavior for CarvedPumpkinBlock {
         )
     }
 
-    // TODO: Add golem spawning behavior
+    // TODO: Add golem spawning behavior (iron, copper, snow) including dropper checks
 }
