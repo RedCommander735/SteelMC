@@ -53,12 +53,12 @@ pub use redstone::{
 pub(crate) use redstone::{MAX_REDSTONE_SIGNAL, MIN_REDSTONE_SIGNAL};
 pub use vegetation::{
     AttachedStemBlock, AzaleaBlock, BambooSaplingBlock, BambooStalkBlock, BeetrootBlock,
-    CactusBlock, CactusFlowerBlock, CarrotBlock, CocoaBlock, CoralBlock, CropBlock,
-    DoublePlantBlock, FlowerBlock, GrassBlock, MangroveLeavesBlock, MultifaceBlock, MyceliumBlock,
-    NetherSproutsBlock, NetherWartBlock, PitcherCropBlock, PotatoBlock, PumpkinBlock,
-    RootedDirtBlock, SeagrassBlock, SnowyBlock, StemBlock, SugarCaneBlock, SweetBerryBushBlock,
-    TallFlowerBlock, TallGrassBlock, TallSeagrassBlock, TintedParticleLeavesBlock,
-    TorchflowerCropBlock, UntintedParticleLeavesBlock,
+    CactusBlock, CactusFlowerBlock, CarrotBlock, CarvedPumpkinBlock, CocoaBlock, CoralBlock,
+    CropBlock, DoublePlantBlock, FlowerBlock, GrassBlock, MangroveLeavesBlock, MultifaceBlock,
+    MyceliumBlock, NetherSproutsBlock, NetherWartBlock, PitcherCropBlock, PotatoBlock,
+    PumpkinBlock, RootedDirtBlock, SeagrassBlock, SnowyBlock, StemBlock, SugarCaneBlock,
+    SweetBerryBushBlock, TallFlowerBlock, TallGrassBlock, TallSeagrassBlock,
+    TintedParticleLeavesBlock, TorchflowerCropBlock, UntintedParticleLeavesBlock,
 };
 pub use vegetation::{
     BaseCoralFanBlock, BaseCoralPlantBlock, BaseCoralWallFanBlock, BigDripleafBlock,
