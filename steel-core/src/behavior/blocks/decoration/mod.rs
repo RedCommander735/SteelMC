@@ -6,9 +6,9 @@ mod chain_block;
 mod end_rod_block;
 mod lantern_block;
 mod sign_block;
+mod skull;
 mod torch_block;
 mod weathering_lantern_block;
-mod skull;
 
 pub use banner_block::{BannerBlock, WallBannerBlock};
 pub use cake_block::CakeBlock;
