@@ -54,7 +54,7 @@ impl BlockBehavior for SkullBlock {
         source_block: BlockRef,
         moved_by_piston: bool,
     ) {
-        self.handle_skull_neighbor_changed(state, world, pos, source_block, moved_by_piston)
+        self.handle_skull_neighbor_changed(state, world, pos, source_block, moved_by_piston);
     }
 
     fn is_pathfindable(&self, state: BlockStateId, computation_type: PathComputationType) -> bool {

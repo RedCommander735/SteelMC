@@ -93,14 +93,14 @@ impl BlockEntity for SkullBlockEntity {
         let mut state = self.state.lock();
 
         if let Ok(profile) = ResolvableProfile::from_optional_nbt_tag(nbt.get(PROFILE_NBT_KEY)) {
-            state.owner = profile
-        };
+            state.owner = profile;
+        }
         if let Ok(sound) = Identifier::from_optional_nbt_tag(nbt.get(NOTE_BLOCK_SOUND_NBT_KEY)) {
-            state.note_block_sound = sound
-        };
+            state.note_block_sound = sound;
+        }
         if let Ok(name) = TextComponent::from_optional_nbt_tag(nbt.get(CUSTOM_NAME_NBT_KEY)) {
-            state.custom_name = name
-        };
+            state.custom_name = name;
+        }
     }
 
     fn save_additional(&self, nbt: &mut NbtCompound) {
