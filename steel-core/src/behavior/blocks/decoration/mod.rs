@@ -8,6 +8,7 @@ mod lantern_block;
 mod sign_block;
 mod torch_block;
 mod weathering_lantern_block;
+mod skull;
 
 pub use banner_block::{BannerBlock, WallBannerBlock};
 pub use cake_block::CakeBlock;
