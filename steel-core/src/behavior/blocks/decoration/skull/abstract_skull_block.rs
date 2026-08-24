@@ -1,20 +1,15 @@
-use crate::behavior::blocks::PoweredBlock;
 use crate::behavior::{
     BlockBehavior, BlockCollisionContext, BlockEntityCreation, BlockPlaceContext,
 };
-use crate::block_entity::BlockEntityTicker;
+use crate::block_entity::BLOCK_ENTITIES;
 use crate::entity::ai::path::PathComputationType;
 use crate::world::{LevelReader, SignalGetter, World};
 use std::sync::{Arc, Weak};
-use std::todo;
-use steel_macros::block_behavior;
-use steel_registry::block_entity_type::BlockEntityTypeRef;
 use steel_registry::blocks::BlockRef;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
-use steel_registry::blocks::properties::{
-    BlockStateProperties, BoolProperty, EnumProperty, RailShape,
-};
+use steel_registry::blocks::properties::{BlockStateProperties, BoolProperty};
 use steel_registry::blocks::shapes::VoxelShape;
+use steel_registry::vanilla_block_entity_types;
 use steel_utils::types::UpdateFlags;
 use steel_utils::{BlockPos, BlockStateId};
 
@@ -29,7 +24,7 @@ pub enum SkullBlockType {
     Dragon,
 }
 
-pub(super) const POWERED: &BoolProperty = &BlockStateProperties::POWERED;
+const POWERED: &BoolProperty = &BlockStateProperties::POWERED;
 
 /// Shared server behavior inherited from vanilla's `AbstractSkullBlock`.
 pub(super) trait AbstractSkullBlock: BlockBehavior {
@@ -45,14 +40,15 @@ pub(super) trait AbstractSkullBlock: BlockBehavior {
         pos: BlockPos,
         context: BlockCollisionContext,
     ) -> VoxelShape;
-}
 
-impl<T: AbstractSkullBlock> BlockBehavior for T {
-    fn get_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
-        Some(self.state_for_placement(context).set_value(POWERED, context.world.has_neighbor_signal(context.place_pos())))
+    fn default_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
+        Some(self.state_for_placement(context).set_value(
+            POWERED,
+            context.world.has_neighbor_signal(context.place_pos()),
+        ))
     }
 
-    fn handle_neighbor_changed(
+    fn handle_skull_neighbor_changed(
         &self,
         state: BlockStateId,
         world: &Arc<World>,
@@ -70,7 +66,7 @@ impl<T: AbstractSkullBlock> BlockBehavior for T {
         }
     }
 
-    fn is_pathfindable(
+    fn is_skull_pathfindable(
         &self,
         _state: BlockStateId,
         _computation_type: PathComputationType,
@@ -78,23 +74,17 @@ impl<T: AbstractSkullBlock> BlockBehavior for T {
         false
     }
 
-    fn get_collision_shape(
-        &self,
-        state: BlockStateId,
-        world: &dyn LevelReader,
-        pos: BlockPos,
-        context: BlockCollisionContext,
-    ) -> VoxelShape {
-        self.collision_shape(state, world, pos, context)
-    }
-
-    fn new_block_entity(
+    fn new_skull_block_entity(
         &self,
         level: Weak<World>,
         pos: BlockPos,
         state: BlockStateId,
     ) -> BlockEntityCreation {
-        // TODO: Implement SkullBlockEntity
-        todo!("Implement SkullBlockEntity")
+        BlockEntityCreation::from_registered_factory(BLOCK_ENTITIES.create(
+            &vanilla_block_entity_types::SKULL,
+            level,
+            pos,
+            state,
+        ))
     }
 }

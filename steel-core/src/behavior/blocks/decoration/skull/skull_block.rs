@@ -4,17 +4,16 @@ use crate::behavior::blocks::decoration::skull::abstract_skull_block::{
 use crate::behavior::{
     BlockBehavior, BlockCollisionContext, BlockEntityCreation, BlockPlaceContext,
 };
+use crate::entity::ai::path::PathComputationType;
 use crate::world::{LevelReader, World};
-use std::sync::Weak;
+use std::sync::{Arc, Weak};
 use steel_macros::block_behavior;
-use steel_protocol::packets::login::SHello;
-use steel_registry::blocks::properties::{BlockStateProperties, BoolProperty, IntProperty};
-use steel_registry::blocks::shapes::VoxelShape;
-use steel_registry::blocks::{BlockRef, ShapeFn};
+use steel_registry::blocks::BlockRef;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
-use steel_registry::entity_data::EntityData::Rotations;
-use steel_utils::{BlockLocalAabb, BlockPos, BlockStateId};
+use steel_registry::blocks::properties::{BlockStateProperties, IntProperty};
+use steel_registry::blocks::shapes::VoxelShape;
 use steel_utils::angle::convert_to_rotation_segment;
+use steel_utils::{BlockLocalAabb, BlockPos, BlockStateId};
 
 const ROTATION_16: &IntProperty = &BlockStateProperties::ROTATION_16;
 const ROTATIONS: u8 = ROTATION_16.max + 1;
@@ -37,12 +36,38 @@ pub struct SkullBlock {
 }
 
 impl SkullBlock {
-    const fn new(block: BlockRef, skull_type: SkullBlockType) -> Self {
+    pub const fn new(block: BlockRef, skull_type: SkullBlockType) -> Self {
         Self { block, skull_type }
     }
+}
 
-    fn rotate(block_state: BlockStateId, rotation: u8) -> BlockStateId {
-        block_state.set_value(ROTATION_16, rotation)
+impl BlockBehavior for SkullBlock {
+    fn get_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
+        self.default_state_for_placement(context)
+    }
+
+    fn handle_neighbor_changed(
+        &self,
+        state: BlockStateId,
+        world: &Arc<World>,
+        pos: BlockPos,
+        source_block: BlockRef,
+        moved_by_piston: bool,
+    ) {
+        self.handle_skull_neighbor_changed(state, world, pos, source_block, moved_by_piston)
+    }
+
+    fn is_pathfindable(&self, state: BlockStateId, computation_type: PathComputationType) -> bool {
+        self.is_skull_pathfindable(state, computation_type)
+    }
+
+    fn new_block_entity(
+        &self,
+        level: Weak<World>,
+        pos: BlockPos,
+        state: BlockStateId,
+    ) -> BlockEntityCreation {
+        self.new_skull_block_entity(level, pos, state)
     }
 }
 
@@ -58,10 +83,10 @@ impl AbstractSkullBlock for SkullBlock {
 
     fn collision_shape(
         &self,
-        state: BlockStateId,
-        world: &dyn LevelReader,
-        pos: BlockPos,
-        context: BlockCollisionContext,
+        _state: BlockStateId,
+        _world: &dyn LevelReader,
+        _pos: BlockPos,
+        _context: BlockCollisionContext,
     ) -> VoxelShape {
         if self.get_type() == SkullBlockType::Piglin {
             PIGLIN_SHAPE

@@ -12,6 +12,7 @@ mod piston_moving;
 mod potent_sulfur;
 mod raw;
 mod sign;
+mod skull;
 
 pub use barrel::{BARREL_SLOTS, BarrelBlockEntity};
 pub use beehive::{

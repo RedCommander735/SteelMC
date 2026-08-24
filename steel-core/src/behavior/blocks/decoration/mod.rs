@@ -20,5 +20,6 @@ pub use lantern_block::LanternBlock;
 pub use sign_block::{
     CeilingHangingSignBlock, StandingSignBlock, WallHangingSignBlock, WallSignBlock,
 };
+pub use skull::{SkullBlock, SkullBlockType};
 pub use torch_block::{TorchBlock, WallTorchBlock};
 pub use weathering_lantern_block::WeatheringLanternBlock;
