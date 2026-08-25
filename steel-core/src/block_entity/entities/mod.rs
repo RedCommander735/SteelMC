@@ -14,6 +14,8 @@ mod potent_sulfur;
 mod raw;
 mod sign;
 
+mod skull;
+
 pub use barrel::{BARREL_SLOTS, BarrelBlockEntity};
 pub use beehive::{
     BEEHIVE_MAX_OCCUPANTS, BEEHIVE_MIN_OCCUPATION_TICKS_NECTARLESS, BeehiveBlockEntity,
@@ -29,3 +31,4 @@ pub use piston_moving::PistonMovingBlockEntity;
 pub use potent_sulfur::PotentSulfurBlockEntity;
 pub use raw::RawBlockEntity;
 pub use sign::{SIGN_LINES, SignBlockEntity, SignText};
+pub use skull::SkullBlockEntity;
