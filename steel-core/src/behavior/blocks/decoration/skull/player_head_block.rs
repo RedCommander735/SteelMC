@@ -10,7 +10,6 @@ use crate::world::{LevelReader, World};
 use std::sync::{Arc, Weak};
 use steel_macros::block_behavior;
 use steel_registry::blocks::BlockRef;
-use steel_registry::blocks::shapes::VoxelShape;
 use steel_utils::{BlockPos, BlockStateId};
 
 #[block_behavior]
@@ -62,17 +61,7 @@ impl AbstractSkullBlock for PlayerHeadBlock {
         self.base.get_type()
     }
 
-    fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> BlockStateId {
+    fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
         self.base.state_for_placement(context)
-    }
-
-    fn collision_shape(
-        &self,
-        state: BlockStateId,
-        world: &dyn LevelReader,
-        pos: BlockPos,
-        context: BlockCollisionContext,
-    ) -> VoxelShape {
-        self.base.collision_shape(state, world, pos, context)
     }
 }

@@ -64,17 +64,7 @@ impl AbstractSkullBlock for WitherSkullBlock {
         self.base.get_type()
     }
 
-    fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> BlockStateId {
+    fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
         self.base.state_for_placement(context)
-    }
-
-    fn collision_shape(
-        &self,
-        state: BlockStateId,
-        world: &dyn LevelReader,
-        pos: BlockPos,
-        context: BlockCollisionContext,
-    ) -> VoxelShape {
-        self.base.collision_shape(state, world, pos, context)
     }
 }

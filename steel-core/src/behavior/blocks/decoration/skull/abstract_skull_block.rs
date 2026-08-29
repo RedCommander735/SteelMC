@@ -31,21 +31,15 @@ pub(super) trait AbstractSkullBlock: BlockBehavior {
     #[must_use]
     fn get_type(&self) -> SkullBlockType;
     #[must_use]
-    fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> BlockStateId;
-    #[must_use]
-    fn collision_shape(
-        &self,
-        state: BlockStateId,
-        world: &dyn LevelReader,
-        pos: BlockPos,
-        context: BlockCollisionContext,
-    ) -> VoxelShape;
+    fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId>;
 
     fn default_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
-        Some(self.state_for_placement(context).set_value(
-            POWERED,
-            context.world.has_neighbor_signal(context.place_pos()),
-        ))
+        if let Some(state) = self.state_for_placement(context) {
+            Some(state.set_value(
+                POWERED,
+                context.world.has_neighbor_signal(context.place_pos()),
+            ))
+        } else { None }
     }
 
     fn handle_skull_neighbor_changed(

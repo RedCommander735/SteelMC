@@ -1,37 +1,36 @@
+use std::collections::HashMap;
 use crate::behavior::blocks::decoration::skull::abstract_skull_block::{
     AbstractSkullBlock, SkullBlockType,
 };
-use crate::behavior::{
-    BlockBehavior, BlockCollisionContext, BlockEntityCreation, BlockPlaceContext,
-};
+use crate::behavior::{BlockBehavior, BlockCollisionContext, BlockEntityCreation, BlockPlaceContext, BlockStateBehaviorExt};
 use crate::entity::ai::path::PathComputationType;
 use crate::world::{LevelReader, World};
 use std::sync::{Arc, Weak};
 use steel_macros::block_behavior;
 use steel_registry::blocks::BlockRef;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
-use steel_registry::blocks::properties::{BlockStateProperties, IntProperty};
+use steel_registry::blocks::properties::{BlockStateProperties, EnumProperty, IntProperty};
 use steel_registry::blocks::shapes::VoxelShape;
 use steel_utils::angle::convert_to_rotation_segment;
-use steel_utils::{BlockLocalAabb, BlockPos, BlockStateId};
+use steel_utils::{BlockLocalAabb, BlockPos, BlockStateId, Direction};
+use crate::behavior::blocks::{SkullBlock, WitherSkullBlock};
 
-const ROTATION_16: &IntProperty = &BlockStateProperties::ROTATION_16;
-const ROTATIONS: u8 = ROTATION_16.max + 1;
+const FACING: &EnumProperty<Direction> = &BlockStateProperties::HORIZONTAL_FACING;
 
 #[block_behavior]
-pub struct SkullBlock {
+pub struct WallSkullBlock {
     block: BlockRef,
     #[json_arg(r#enum = "SkullBlockType", json = "type")]
     skull_type: SkullBlockType,
 }
 
-impl SkullBlock {
+impl WallSkullBlock {
     pub const fn new(block: BlockRef, skull_type: SkullBlockType) -> Self {
         Self { block, skull_type }
     }
 }
 
-impl BlockBehavior for SkullBlock {
+impl BlockBehavior for WallSkullBlock {
     fn get_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
         self.default_state_for_placement(context)
     }
@@ -61,13 +60,24 @@ impl BlockBehavior for SkullBlock {
     }
 }
 
-impl AbstractSkullBlock for SkullBlock {
+impl AbstractSkullBlock for WallSkullBlock {
     fn get_type(&self) -> SkullBlockType {
         self.skull_type
     }
 
     fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
-        let rotation = convert_to_rotation_segment(context.rotation());
-        Some(self.block.default_state().set_value(ROTATION_16, rotation))
+        let directions = context.get_nearest_looking_directions();
+        let level = context.world;
+        let pos = context.place_pos();
+        let state = self.block.default_state();
+
+        for direction in directions {
+            if direction.axis().is_horizontal() && !level.get_block_state(pos.relative(direction)).can_be_replaced(context) {
+                let facing: Direction = direction.opposite();
+                return Some(state.set_value(FACING, facing));
+            }
+        };
+
+        None
     }
 }
