@@ -10,6 +10,7 @@ use steel_registry::{ResolvableProfile, vanilla_block_entity_types};
 use steel_utils::locks::SyncMutex;
 use steel_utils::{BlockPos, BlockStateId, DowncastType, DowncastTypeKey, Identifier};
 use text_components::TextComponent;
+use steel_registry::item_stack::ItemStack;
 
 const POWERED: &BoolProperty = &BlockStateProperties::POWERED;
 
@@ -119,4 +120,26 @@ impl BlockEntity for SkullBlockEntity {
     fn get_update_tag(&self) -> Option<NbtCompound> {
         Some(self.save_custom_only())
     }
+
+    // fn apply_components_from_item(&self, item: &ItemStack) {
+        // TODO: Wait for shulkerbox pr to add this function to blockentitiy
+        // let Some(contents) = item.get(CONTAINER) else {
+        //     return;
+        // };
+        //
+        // let mut container = self.container.lock();
+        // container.items.fill(ItemStack::empty());
+        // for (slot, template) in contents.items().iter().enumerate() {
+        //     if slot >= SHULKER_BOX_SLOTS {
+        //         break;
+        //     }
+        //     if let Some(template) = template {
+        //         container.items_mut()[slot] = ItemStack::with_count_and_patch(
+        //             template.item(),
+        //             template.count(),
+        //             template.components().clone(),
+        //         );
+        //     }
+        // }
+    // }
 }
