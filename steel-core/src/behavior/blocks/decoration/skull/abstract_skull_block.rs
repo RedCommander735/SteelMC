@@ -10,23 +10,10 @@ use steel_registry::vanilla_block_entity_types;
 use steel_utils::types::UpdateFlags;
 use steel_utils::{BlockPos, BlockStateId};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SkullBlockType {
-    Skeleton,
-    WitherSkeleton,
-    Player,
-    Zombie,
-    Creeper,
-    Piglin,
-    Dragon,
-}
-
 const POWERED: &BoolProperty = &BlockStateProperties::POWERED;
 
 /// Shared server behavior inherited from vanilla's `AbstractSkullBlock`.
 pub(super) trait AbstractSkullBlock: BlockBehavior {
-    #[must_use]
-    fn get_type(&self) -> SkullBlockType;
     #[must_use]
     fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId>;
 

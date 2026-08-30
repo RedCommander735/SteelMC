@@ -1,7 +1,5 @@
 use crate::behavior::blocks::SkullBlock;
-use crate::behavior::blocks::decoration::skull::abstract_skull_block::{
-    AbstractSkullBlock, SkullBlockType,
-};
+use crate::behavior::blocks::decoration::skull::abstract_skull_block::AbstractSkullBlock;
 use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockPlaceContext};
 use crate::entity::ai::path::PathComputationType;
 use crate::world::World;
@@ -10,15 +8,17 @@ use steel_macros::block_behavior;
 use steel_registry::blocks::BlockRef;
 use steel_utils::{BlockPos, BlockStateId};
 
+/// Behavior for player head blocks.
 #[block_behavior]
 pub struct PlayerHeadBlock {
     base: SkullBlock,
 }
 
 impl PlayerHeadBlock {
+    /// Creates a new player head block behavior for the given block.
     pub const fn new(block: BlockRef) -> Self {
         Self {
-            base: SkullBlock::new(block, SkullBlockType::Player),
+            base: SkullBlock::new(block),
         }
     }
 }
@@ -55,10 +55,6 @@ impl BlockBehavior for PlayerHeadBlock {
 }
 
 impl AbstractSkullBlock for PlayerHeadBlock {
-    fn get_type(&self) -> SkullBlockType {
-        self.base.get_type()
-    }
-
     fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
         self.base.state_for_placement(context)
     }

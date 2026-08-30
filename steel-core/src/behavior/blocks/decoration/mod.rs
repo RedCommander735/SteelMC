@@ -30,6 +30,6 @@ pub use torch_block::{TorchBlock, WallTorchBlock};
 pub use weathering_lantern_block::WeatheringLanternBlock;
 
 pub use skull::{
-    PiglinWallSkullBlock, PlayerHeadBlock, PlayerWallHeadBlock, SkullBlock, SkullBlockType,
-    WallSkullBlock, WitherSkullBlock, WitherWallSkullBlock,
+    PiglinWallSkullBlock, PlayerHeadBlock, PlayerWallHeadBlock, SkullBlock, WallSkullBlock,
+    WitherSkullBlock, WitherWallSkullBlock,
 };

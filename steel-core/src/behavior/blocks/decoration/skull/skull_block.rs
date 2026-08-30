@@ -1,6 +1,4 @@
-use crate::behavior::blocks::decoration::skull::abstract_skull_block::{
-    AbstractSkullBlock, SkullBlockType,
-};
+use crate::behavior::blocks::decoration::skull::abstract_skull_block::AbstractSkullBlock;
 use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockPlaceContext};
 use crate::entity::ai::path::PathComputationType;
 use crate::world::World;
@@ -13,18 +11,17 @@ use steel_utils::angle::convert_to_rotation_segment;
 use steel_utils::{BlockPos, BlockStateId};
 
 const ROTATION_16: &IntProperty = &BlockStateProperties::ROTATION_16;
-const ROTATIONS: u8 = ROTATION_16.max + 1;
 
+/// Behavior for default skull blocks (skeleton, zombie, creeper, dragon).
 #[block_behavior]
 pub struct SkullBlock {
     block: BlockRef,
-    #[json_arg(r#enum = "SkullBlockType", json = "type")]
-    skull_type: SkullBlockType,
 }
 
 impl SkullBlock {
-    pub const fn new(block: BlockRef, skull_type: SkullBlockType) -> Self {
-        Self { block, skull_type }
+    /// Creates a new skull block behavior for the given block.
+    pub const fn new(block: BlockRef) -> Self {
+        Self { block }
     }
 }
 
@@ -59,10 +56,6 @@ impl BlockBehavior for SkullBlock {
 }
 
 impl AbstractSkullBlock for SkullBlock {
-    fn get_type(&self) -> SkullBlockType {
-        self.skull_type
-    }
-
     fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
         let rotation = convert_to_rotation_segment(context.rotation());
         Some(self.block.default_state().set_value(ROTATION_16, rotation))

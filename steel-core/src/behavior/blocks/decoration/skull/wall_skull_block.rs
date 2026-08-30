@@ -1,6 +1,4 @@
-use crate::behavior::blocks::decoration::skull::abstract_skull_block::{
-    AbstractSkullBlock, SkullBlockType,
-};
+use crate::behavior::blocks::decoration::skull::abstract_skull_block::AbstractSkullBlock;
 use crate::behavior::{
     BlockBehavior, BlockEntityCreation, BlockPlaceContext, BlockStateBehaviorExt,
 };
@@ -15,16 +13,16 @@ use steel_utils::{BlockPos, BlockStateId, Direction};
 
 const FACING: &EnumProperty<Direction> = &BlockStateProperties::HORIZONTAL_FACING;
 
+/// Behavior for default wall skull blocks (skeleton, zombie, creeper, dragon).
 #[block_behavior]
 pub struct WallSkullBlock {
     block: BlockRef,
-    #[json_arg(r#enum = "SkullBlockType", json = "type")]
-    skull_type: SkullBlockType,
 }
 
 impl WallSkullBlock {
-    pub const fn new(block: BlockRef, skull_type: SkullBlockType) -> Self {
-        Self { block, skull_type }
+    /// Creates a new wall skull block behavior for the given block.
+    pub const fn new(block: BlockRef) -> Self {
+        Self { block }
     }
 }
 
@@ -59,10 +57,6 @@ impl BlockBehavior for WallSkullBlock {
 }
 
 impl AbstractSkullBlock for WallSkullBlock {
-    fn get_type(&self) -> SkullBlockType {
-        self.skull_type
-    }
-
     fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
         let directions = context.get_nearest_looking_directions();
         let level = context.world;

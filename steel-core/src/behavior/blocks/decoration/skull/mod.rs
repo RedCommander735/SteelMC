@@ -7,7 +7,6 @@ mod wall_skull_block;
 mod wither_skull_block;
 mod wither_wall_skull_block;
 
-pub use abstract_skull_block::SkullBlockType;
 pub use piglin_wall_skull_block::PiglinWallSkullBlock;
 pub use player_head_block::PlayerHeadBlock;
 pub use player_wall_head_block::PlayerWallHeadBlock;

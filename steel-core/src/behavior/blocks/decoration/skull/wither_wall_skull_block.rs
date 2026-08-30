@@ -1,7 +1,5 @@
 use crate::behavior::blocks::WallSkullBlock;
-use crate::behavior::blocks::decoration::skull::abstract_skull_block::{
-    AbstractSkullBlock, SkullBlockType,
-};
+use crate::behavior::blocks::decoration::skull::abstract_skull_block::AbstractSkullBlock;
 use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockPlaceContext};
 use crate::entity::ai::path::PathComputationType;
 use crate::world::World;
@@ -10,15 +8,17 @@ use steel_macros::block_behavior;
 use steel_registry::blocks::BlockRef;
 use steel_utils::{BlockPos, BlockStateId};
 
+/// Behavior for wither wall skull blocks.
 #[block_behavior]
 pub struct WitherWallSkullBlock {
     base: WallSkullBlock,
 }
 
 impl WitherWallSkullBlock {
+    /// Creates a new wither wall skull block behavior for the given block.
     pub const fn new(block: BlockRef) -> Self {
         Self {
-            base: WallSkullBlock::new(block, SkullBlockType::WitherSkeleton),
+            base: WallSkullBlock::new(block),
         }
     }
 }
@@ -57,10 +57,6 @@ impl BlockBehavior for WitherWallSkullBlock {
 }
 
 impl AbstractSkullBlock for WitherWallSkullBlock {
-    fn get_type(&self) -> SkullBlockType {
-        self.base.get_type()
-    }
-
     fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
         self.base.state_for_placement(context)
     }
