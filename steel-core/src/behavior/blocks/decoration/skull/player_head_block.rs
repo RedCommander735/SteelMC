@@ -2,11 +2,9 @@ use crate::behavior::blocks::SkullBlock;
 use crate::behavior::blocks::decoration::skull::abstract_skull_block::{
     AbstractSkullBlock, SkullBlockType,
 };
-use crate::behavior::{
-    BlockBehavior, BlockCollisionContext, BlockEntityCreation, BlockPlaceContext,
-};
+use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockPlaceContext};
 use crate::entity::ai::path::PathComputationType;
-use crate::world::{LevelReader, World};
+use crate::world::World;
 use std::sync::{Arc, Weak};
 use steel_macros::block_behavior;
 use steel_registry::blocks::BlockRef;

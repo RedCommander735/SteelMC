@@ -1,14 +1,11 @@
-use crate::behavior::{
-    BlockBehavior, BlockCollisionContext, BlockEntityCreation, BlockPlaceContext,
-};
+use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockPlaceContext};
 use crate::block_entity::BLOCK_ENTITIES;
 use crate::entity::ai::path::PathComputationType;
-use crate::world::{LevelReader, SignalGetter, World};
+use crate::world::{SignalGetter, World};
 use std::sync::{Arc, Weak};
 use steel_registry::blocks::BlockRef;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
 use steel_registry::blocks::properties::{BlockStateProperties, BoolProperty};
-use steel_registry::blocks::shapes::VoxelShape;
 use steel_registry::vanilla_block_entity_types;
 use steel_utils::types::UpdateFlags;
 use steel_utils::{BlockPos, BlockStateId};
@@ -34,12 +31,12 @@ pub(super) trait AbstractSkullBlock: BlockBehavior {
     fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId>;
 
     fn default_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
-        if let Some(state) = self.state_for_placement(context) {
-            Some(state.set_value(
+        self.state_for_placement(context).map(|state| {
+            state.set_value(
                 POWERED,
                 context.world.has_neighbor_signal(context.place_pos()),
-            ))
-        } else { None }
+            )
+        })
     }
 
     fn handle_skull_neighbor_changed(

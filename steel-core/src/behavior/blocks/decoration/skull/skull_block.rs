@@ -1,19 +1,16 @@
 use crate::behavior::blocks::decoration::skull::abstract_skull_block::{
     AbstractSkullBlock, SkullBlockType,
 };
-use crate::behavior::{
-    BlockBehavior, BlockCollisionContext, BlockEntityCreation, BlockPlaceContext,
-};
+use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockPlaceContext};
 use crate::entity::ai::path::PathComputationType;
-use crate::world::{LevelReader, World};
+use crate::world::World;
 use std::sync::{Arc, Weak};
 use steel_macros::block_behavior;
 use steel_registry::blocks::BlockRef;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
 use steel_registry::blocks::properties::{BlockStateProperties, IntProperty};
-use steel_registry::blocks::shapes::VoxelShape;
 use steel_utils::angle::convert_to_rotation_segment;
-use steel_utils::{BlockLocalAabb, BlockPos, BlockStateId};
+use steel_utils::{BlockPos, BlockStateId};
 
 const ROTATION_16: &IntProperty = &BlockStateProperties::ROTATION_16;
 const ROTATIONS: u8 = ROTATION_16.max + 1;

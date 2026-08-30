@@ -29,4 +29,7 @@ pub use sign_block::{
 pub use torch_block::{TorchBlock, WallTorchBlock};
 pub use weathering_lantern_block::WeatheringLanternBlock;
 
-pub use skull::{PlayerHeadBlock, SkullBlock, SkullBlockType, WitherSkullBlock, WallSkullBlock};
+pub use skull::{
+    PiglinWallSkullBlock, PlayerHeadBlock, PlayerWallHeadBlock, SkullBlock, SkullBlockType,
+    WallSkullBlock, WitherSkullBlock, WitherWallSkullBlock,
+};

@@ -1,19 +1,17 @@
-use std::collections::HashMap;
 use crate::behavior::blocks::decoration::skull::abstract_skull_block::{
     AbstractSkullBlock, SkullBlockType,
 };
-use crate::behavior::{BlockBehavior, BlockCollisionContext, BlockEntityCreation, BlockPlaceContext, BlockStateBehaviorExt};
+use crate::behavior::{
+    BlockBehavior, BlockEntityCreation, BlockPlaceContext, BlockStateBehaviorExt,
+};
 use crate::entity::ai::path::PathComputationType;
 use crate::world::{LevelReader, World};
 use std::sync::{Arc, Weak};
 use steel_macros::block_behavior;
 use steel_registry::blocks::BlockRef;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
-use steel_registry::blocks::properties::{BlockStateProperties, EnumProperty, IntProperty};
-use steel_registry::blocks::shapes::VoxelShape;
-use steel_utils::angle::convert_to_rotation_segment;
-use steel_utils::{BlockLocalAabb, BlockPos, BlockStateId, Direction};
-use crate::behavior::blocks::{SkullBlock, WitherSkullBlock};
+use steel_registry::blocks::properties::{BlockStateProperties, EnumProperty};
+use steel_utils::{BlockPos, BlockStateId, Direction};
 
 const FACING: &EnumProperty<Direction> = &BlockStateProperties::HORIZONTAL_FACING;
 
@@ -72,11 +70,15 @@ impl AbstractSkullBlock for WallSkullBlock {
         let state = self.block.default_state();
 
         for direction in directions {
-            if direction.axis().is_horizontal() && !level.get_block_state(pos.relative(direction)).can_be_replaced(context) {
+            if direction.axis().is_horizontal()
+                && !level
+                    .get_block_state(pos.relative(direction))
+                    .can_be_replaced(context)
+            {
                 let facing: Direction = direction.opposite();
                 return Some(state.set_value(FACING, facing));
             }
-        };
+        }
 
         None
     }
