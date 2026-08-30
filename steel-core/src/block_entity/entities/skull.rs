@@ -75,14 +75,17 @@ impl BlockEntity for SkullBlockEntity {
     fn save_additional(&self, nbt: &mut NbtCompound) {
         let state = self.state.lock();
 
-        nbt.insert(PROFILE_NBT_KEY, state.owner.clone().to_nbt_tag());
+        if let Some(profile) = state.owner.clone().to_optional_nbt_tag() {
+            nbt.insert(PROFILE_NBT_KEY, profile);
+        }
 
-        nbt.insert(
-            NOTE_BLOCK_SOUND_NBT_KEY,
-            state.note_block_sound.clone().to_nbt_tag(),
-        );
+        if let Some(sound) = state.note_block_sound.clone().to_optional_nbt_tag() {
+            nbt.insert(NOTE_BLOCK_SOUND_NBT_KEY, sound);
+        }
 
-        nbt.insert(CUSTOM_NAME_NBT_KEY, state.custom_name.clone().to_nbt_tag());
+        if let Some(name) = state.custom_name.clone().to_optional_nbt_tag() {
+            nbt.insert(CUSTOM_NAME_NBT_KEY, name);
+        }
     }
 
     fn get_update_tag(&self) -> Option<NbtCompound> {
