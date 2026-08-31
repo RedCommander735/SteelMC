@@ -30,6 +30,7 @@ mod tellraw;
 mod tick;
 mod time;
 mod weather;
+mod data;
 
 pub(crate) use difficulty::player_can_change_difficulty;
 
@@ -63,6 +64,7 @@ pub(crate) fn create_registered_dispatcher(
     builder.register(clear::registration())?;
     builder.register(operator::deop_registration())?;
     builder.register(damage::registration())?;
+    builder.register(data::registration())?;
     builder.register(difficulty::registration())?;
     builder.register(domain::registration())?;
     builder.register(enchant::registration())?;
