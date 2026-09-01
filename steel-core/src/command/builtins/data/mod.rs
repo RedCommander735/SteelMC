@@ -12,11 +12,9 @@ use super::super::{
     registration::CommandRegistration,
 };
 use crate::command::brigadier::{ArgumentType, CommandNodeBuilder, CommandSyntaxError};
-use crate::entity::ai::path::Path;
 use simdnbt::owned::{NbtList, NbtTag};
 use steel_utils::nbt::NbtPath;
-use steel_utils::{BlockPos, Identifier, translations};
-use text_components::TextComponent;
+use steel_utils::{Identifier, translations};
 
 type Builder = CommandNodeBuilder<CommandSource, SteelCommandRuntime>;
 type Ctx = SteelCommandContext<CommandSource>;
@@ -24,7 +22,27 @@ type Ctx = SteelCommandContext<CommandSource>;
 pub(super) const PATH_ARG: &str = "path";
 pub(super) const SCALE_ARG: &str = "scale";
 
-const GET_ACCESSORS: [fn() -> Builder; 1] = [block_accessor::get];
+struct Accessor {
+    get: fn() -> Builder,
+    merge: fn() -> Builder,
+    modify: fn() -> Builder,
+    remove: fn() -> Builder,
+}
+
+const TARGET_ACCESSORS: [Accessor; 2] = [
+    Accessor {
+        get: block_accessor::get_target,
+        merge: block_accessor::merge_target,
+        modify: block_accessor::modify_target,
+        remove: block_accessor::remove_target,
+    },
+    Accessor {
+        get: entity_accessor::get_target,
+        merge: entity_accessor::merge_target,
+        modify: entity_accessor::modify_target,
+        remove: entity_accessor::remove_target,
+    },
+];
 
 pub(super) fn registration() -> CommandRegistration<CommandSource> {
     CommandRegistration::new(Identifier::vanilla_static("data"), |_| command())
@@ -32,29 +50,33 @@ pub(super) fn registration() -> CommandRegistration<CommandSource> {
 
 fn command() -> Builder {
     literal("data").then(
-        GET_ACCESSORS
+        TARGET_ACCESSORS
             .into_iter()
-            .fold(literal("get"), |builder, get| builder.then(get())),
+            .fold(literal("get"), |builder, accessor| {
+                builder.then((accessor.get)())
+            }),
     )
 }
 
 pub(super) fn path_scale_args(
-    get_data_from_path: fn(context: &Ctx) -> Result<i32, CommandSyntaxError>,
-    get_numeric_value: fn(context: &Ctx) -> Result<i32, CommandSyntaxError>,
+    get_data_from_path: fn(context: &Ctx, arg: &str) -> Result<i32, CommandSyntaxError>,
+    get_numeric_value: fn(context: &Ctx, arg: &str) -> Result<i32, CommandSyntaxError>,
+    arg: String,
 ) -> Builder {
     argument(PATH_ARG, SteelArgumentType::nbt_path())
-        .executes(get_data_from_path)
+        .executes({
+            let a = arg.clone();
+            move |ctx| get_data_from_path(ctx, &a)
+        })
         .then(
-            argument(SCALE_ARG, ArgumentType::double(f64::MIN, f64::MAX))
-                .executes(get_numeric_value),
+            argument(SCALE_ARG, ArgumentType::double(f64::MIN, f64::MAX)).executes({
+                let a = arg.clone();
+                move |ctx| get_numeric_value(ctx, &a)
+            }),
         )
 }
 
-pub(super) fn process_numeric_arg(
-    tag: NbtTag,
-    path: &NbtPath,
-    scale: f64,
-) -> Result<i32, CommandSyntaxError> {
+pub(super) fn process_numeric_arg(tag: NbtTag, scale: f64) -> Option<i32> {
     let val: f64 = match tag {
         NbtTag::Byte(b) => f64::from(b),
         NbtTag::Short(s) => f64::from(s),
@@ -63,14 +85,31 @@ pub(super) fn process_numeric_arg(
         NbtTag::Float(f) => f64::from(f),
         NbtTag::Double(d) => d,
         _ => {
-            return Err(CommandSyntaxError::dynamic(
-                translations::COMMANDS_DATA_GET_INVALID
-                    .message([TextComponent::plain(path.as_str().to_string())]),
-            ));
+            return None;
         }
     };
 
-    Ok((val * scale).floor() as i32)
+    Some((val * scale).floor() as i32)
+}
+
+/// Takes a NbtTag and a NbtPath and returns a single Tag at that path.
+/// Mirrors vanilla `DataCommands.getSingleTag`
+// This is also used by the function command
+pub(crate) fn get_single_tag(
+    tag: &NbtTag,
+    path: &NbtPath,
+) -> Result<Option<NbtTag>, CommandSyntaxError> {
+    let tags = path.get(tag);
+    if tags.is_empty() {
+        return Ok(None);
+    }
+    if tags.len() > 1 {
+        return Err(CommandSyntaxError::dynamic(
+            &translations::COMMANDS_DATA_GET_MULTIPLE,
+        ));
+    }
+
+    Ok(Some(tags[0].clone()))
 }
 
 fn process_path_arg(tag: NbtTag) -> i32 {
