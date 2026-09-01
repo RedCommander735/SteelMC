@@ -24,6 +24,7 @@ mod seed;
 mod setblock;
 mod setidletimeout;
 mod setworldspawn;
+mod spawnpoint;
 mod stop;
 mod summon;
 mod teleport;
@@ -31,6 +32,7 @@ mod tellraw;
 mod tick;
 mod time;
 mod weather;
+mod worldborder;
 
 pub(crate) use difficulty::player_can_change_difficulty;
 
@@ -83,6 +85,7 @@ pub(crate) fn create_registered_dispatcher(
     builder.register(return_command::registration())?;
     builder.register(seed::registration())?;
     builder.register(setblock::registration())?;
+    builder.register(spawnpoint::registration())?;
     builder.register(setidletimeout::registration())?;
     builder.register(setworldspawn::registration())?;
     builder.register(stop::registration())?;
@@ -92,6 +95,7 @@ pub(crate) fn create_registered_dispatcher(
     builder.register(tick::registration())?;
     builder.register(time::registration())?;
     builder.register(weather::registration())?;
+    builder.register(worldborder::registration())?;
     builder.register(invsee::registration()?)?;
     builder.extend(extension_commands.into_inner())?;
     builder.build_with_permissions()
@@ -159,6 +163,7 @@ mod tests {
                 "return",
                 "seed",
                 "setblock",
+                "spawnpoint",
                 "setidletimeout",
                 "setworldspawn",
                 "stop",
@@ -169,6 +174,7 @@ mod tests {
                 "tick",
                 "time",
                 "weather",
+                "worldborder",
                 "invsee"
             ]
         );
