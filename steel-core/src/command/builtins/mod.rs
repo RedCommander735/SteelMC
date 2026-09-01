@@ -2,6 +2,7 @@
 
 mod clear;
 mod damage;
+mod data;
 mod difficulty;
 mod domain;
 mod enchant;
@@ -30,7 +31,6 @@ mod tellraw;
 mod tick;
 mod time;
 mod weather;
-mod data;
 
 pub(crate) use difficulty::player_can_change_difficulty;
 
@@ -139,6 +139,7 @@ mod tests {
                 "clear",
                 "deop",
                 "damage",
+                "data",
                 "difficulty",
                 "domain",
                 "enchant",
