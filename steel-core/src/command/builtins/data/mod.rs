@@ -29,7 +29,7 @@ struct Accessor {
     remove: fn() -> Builder,
 }
 
-const TARGET_ACCESSORS: [Accessor; 2] = [
+const TARGET_ACCESSORS: [Accessor; 3] = [
     Accessor {
         get: block_accessor::get_target,
         merge: block_accessor::merge_target,
@@ -41,6 +41,12 @@ const TARGET_ACCESSORS: [Accessor; 2] = [
         merge: entity_accessor::merge_target,
         modify: entity_accessor::modify_target,
         remove: entity_accessor::remove_target,
+    },
+    Accessor {
+        get: storage_accessor::get_target,
+        merge: storage_accessor::merge_target,
+        modify: storage_accessor::modify_target,
+        remove: storage_accessor::remove_target,
     },
 ];
 

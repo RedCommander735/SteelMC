@@ -78,10 +78,10 @@ fn get_single(
     let entity = context.entity(arg)?;
     let path = context.nbt_path(PATH_ARG)?.clone();
 
-    let mut tag = entity.nbt_for_data_compare().to_nbt_tag();
+    let tag = entity.nbt_for_data_compare().to_nbt_tag();
 
-    if let Some(t) = get_single_tag(&tag, &path)? {
-        tag = t;
+    let s_tag = if let Some(t) = get_single_tag(&tag, &path)? {
+        t
     } else {
         return Err(CommandSyntaxError::dynamic(
             translations::COMMANDS_DATA_GET_UNKNOWN
@@ -90,7 +90,7 @@ fn get_single(
         ));
     };
 
-    Ok((tag, entity, path))
+    Ok((s_tag, entity, path))
 }
 
 fn get_numeric_value(
