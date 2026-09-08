@@ -1,12 +1,17 @@
+use std::borrow::Cow;
+use std::collections::HashSet;
+
 use super::super::super::execution::{
     CommandSource, SteelArgumentType, SteelCommandContext, SteelCommandRuntime, argument, literal,
 };
 use crate::command::brigadier::{CommandNodeBuilder, CommandSyntaxError};
 use crate::command::builtins::data::{
-    PATH_ARG, SCALE_ARG, get_single_tag, path_scale_args, process_numeric_arg, process_path_arg,
+    NBT_ARG, PATH_ARG, SCALE_ARG, get_single_tag, merge_compounds,
+    path_scale_args, process_numeric_arg, process_path_arg,
 };
-use simdnbt::ToNbtTag;
-use simdnbt::owned::NbtTag;
+use simdnbt::borrow::BaseNbtCompound;
+use simdnbt::owned::{NbtCompound, NbtTag};
+use simdnbt::{Mutf8Str, Mutf8String, ToNbtTag};
 use steel_utils::nbt::NbtPath;
 use steel_utils::text::command_nbt_component;
 use steel_utils::{BlockPos, translations};
@@ -43,25 +48,30 @@ pub(super) fn get_source() -> Builder {
     )
 }
 
-fn get_data(
-    context: &SteelCommandContext<CommandSource>,
-    arg: String,
-) -> Result<i32, CommandSyntaxError> {
-    let coordinates = context.coordinates(&arg)?;
-    let block_pos = coordinates.block_pos(context.source());
-
-    if let Some(entity) = context.source().world().get_block_entity(block_pos) {
-        let tag = entity.save_with_full_metadata().to_nbt_tag();
-
-        context
-            .source()
-            .send_success(&print_success(&tag, &block_pos), false);
-        return Ok(1);
+fn get_tag(source: &CommandSource, pos: BlockPos) -> Result<NbtCompound, CommandSyntaxError> {
+    if let Some(entity) = source.world().get_block_entity(pos) {
+        return Ok(entity.save_with_full_metadata());
     }
 
     Err(CommandSyntaxError::dynamic(TextComponent::from(
         &translations::COMMANDS_DATA_BLOCK_INVALID,
     )))
+}
+
+fn get_data(
+    context: &SteelCommandContext<CommandSource>,
+    arg: String,
+) -> Result<i32, CommandSyntaxError> {
+    let source = context.source();
+    let coordinates = context.coordinates(&arg)?;
+    let block_pos = coordinates.block_pos(context.source());
+
+    let tag = get_tag(source, block_pos)?.to_nbt_tag();
+
+    context
+        .source()
+        .send_success(&print_success(&tag, &block_pos), false);
+    Ok(1)
 }
 
 fn get_tag_from_path(
@@ -81,26 +91,21 @@ fn get_single(
     context: &SteelCommandContext<CommandSource>,
     arg: &str,
 ) -> Result<(NbtTag, BlockPos, NbtPath), CommandSyntaxError> {
+    let source = context.source();
     let coordinates = context.coordinates(arg)?;
-    let block_pos = coordinates.block_pos(context.source());
+    let block_pos = coordinates.block_pos(source);
     let path = context.nbt_path(PATH_ARG)?.clone();
 
-    let s_tag = if let Some(entity) = context.source().world().get_block_entity(block_pos) {
-        let tag = entity.save_with_full_metadata().to_nbt_tag();
+    let tag = get_tag(source, block_pos)?.to_nbt_tag();
 
-        if let Some(t) = get_single_tag(&tag, &path)? {
-            t
-        } else {
-            return Err(CommandSyntaxError::dynamic(
-                translations::COMMANDS_DATA_GET_UNKNOWN
-                    .message([TextComponent::plain(path.as_str().to_string())])
-                    .component(),
-            ));
-        }
+    let s_tag = if let Some(t) = get_single_tag(&tag, &path)? {
+        t
     } else {
-        return Err(CommandSyntaxError::dynamic(TextComponent::from(
-            &translations::COMMANDS_DATA_BLOCK_INVALID,
-        )));
+        return Err(CommandSyntaxError::dynamic(
+            translations::COMMANDS_DATA_GET_UNKNOWN
+                .message([TextComponent::plain(path.as_str().to_string())])
+                .component(),
+        ));
     };
 
     Ok((s_tag, block_pos, path))
@@ -128,6 +133,83 @@ fn get_numeric_value(
     }
 }
 
+pub(super) fn merge_target() -> Builder {
+    let arg = format!("{TARGET_PREFIX}{ARG}");
+    literal(ACCESSOR_KEYWORD).then(argument(arg.clone(), SteelArgumentType::block_pos()).then(
+        argument(NBT_ARG, SteelArgumentType::nbt_compound()).executes({
+            let a = arg.clone();
+            move |ctx| merge_data(ctx, a.clone())
+        }),
+    ))
+}
+pub(super) fn merge_source() -> Builder {
+    let arg = format!("{SOURCE_PREFIX}{ARG}");
+    literal(ACCESSOR_KEYWORD).then(argument(arg.clone(), SteelArgumentType::block_pos()).then(
+        argument(NBT_ARG, SteelArgumentType::nbt_compound()).executes({
+            let a = arg.clone();
+            move |ctx| merge_data(ctx, a.clone())
+        }),
+    ))
+}
+
+fn merge_data(
+    context: &SteelCommandContext<CommandSource>,
+    arg: String,
+) -> Result<i32, CommandSyntaxError> {
+    let source = context.source();
+    let coordinates = context.coordinates(&arg)?;
+    let block_pos = coordinates.block_pos(source);
+    let nbt_compound = context.nbt_compound(NBT_ARG)?.clone();
+
+    let old_data = get_tag(source, block_pos)?;
+
+    let merged = merge_compounds(&old_data, &nbt_compound);
+
+    if old_data == merged {
+        return Err(CommandSyntaxError::dynamic(TextComponent::from(
+            &translations::COMMANDS_DATA_MERGE_FAILED,
+        )));
+    }
+
+    set_data(merged, source, block_pos)?;
+
+    source.send_success(&modified_success(&block_pos), true);
+    Ok(1)
+}
+
+pub(super) fn set_data(
+    compound: NbtCompound,
+    source: &CommandSource,
+    pos: BlockPos,
+) -> Result<(), CommandSyntaxError> {
+    if let Some(entity) = source.world().get_block_entity(pos) {
+        if let Some(world) = entity.get_level() {
+            entity.load_with_owned_components(&compound);
+            entity.set_changed();
+            world.send_block_updated(pos);
+            return Ok(());
+        }
+    }
+    
+    Err(CommandSyntaxError::dynamic(TextComponent::from(
+        &translations::COMMANDS_DATA_BLOCK_INVALID,
+    )))
+}
+
+pub(super) fn modify_target() -> Builder {
+    todo!()
+}
+pub(super) fn modify_source() -> Builder {
+    todo!()
+}
+
+pub(super) fn remove_target() -> Builder {
+    todo!()
+}
+pub(super) fn remove_source() -> Builder {
+    todo!()
+}
+
 fn print_success(data: &NbtTag, pos: &BlockPos) -> TextComponent {
     translations::COMMANDS_DATA_BLOCK_QUERY
         .message([
@@ -152,23 +234,12 @@ fn print_success_scaled(path: &NbtPath, pos: &BlockPos, scale: f64, val: i32) ->
         .component()
 }
 
-pub(super) fn merge_target() -> Builder {
-    literal(ACCESSOR_KEYWORD)
-}
-pub(super) fn merge_source() -> Builder {
-    literal(ACCESSOR_KEYWORD)
-}
-
-pub(super) fn modify_target() -> Builder {
-    todo!()
-}
-fn modify_source() -> Builder {
-    todo!()
-}
-
-pub(super) fn remove_target() -> Builder {
-    todo!()
-}
-pub(super) fn remove_source() -> Builder {
-    todo!()
+fn modified_success(pos: &BlockPos) -> TextComponent {
+    translations::COMMANDS_DATA_BLOCK_MODIFIED
+        .message([
+            TextComponent::plain(pos.x().to_string()),
+            TextComponent::plain(pos.y().to_string()),
+            TextComponent::plain(pos.z().to_string()),
+        ])
+        .component()
 }

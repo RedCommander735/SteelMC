@@ -7,7 +7,7 @@
 )]
 
 use std::sync::Arc;
-
+use simdnbt::owned::NbtCompound;
 use crate::command::brigadier::{
     CommandContext, CommandNodeBuilder, CommandRedirectTarget, CommandRuntime, CommandSyntaxError,
     ContextChain,
@@ -32,7 +32,7 @@ use super::{
     },
     selector::EntitySelector,
 };
-use crate::command::execution::argument::DamageTypeValue;
+use crate::command::execution::argument::{DamageTypeValue, NbtCompoundValue};
 use crate::command::incorrectly_typed_argument;
 use crate::{
     chunk::heightmap::HeightmapType,
@@ -336,6 +336,11 @@ where
 
     pub(crate) fn text_component(&self, name: &str) -> Result<&TextComponent, CommandSyntaxError> {
         self.typed_argument::<ComponentValue>(name)
+            .map(|value| &value.0)
+    }
+
+    pub(crate) fn nbt_compound(&self, name: &str) -> Result<&NbtCompound, CommandSyntaxError> {
+        self.typed_argument::<NbtCompoundValue>(name)
             .map(|value| &value.0)
     }
 

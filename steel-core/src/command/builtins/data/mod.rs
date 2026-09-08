@@ -4,6 +4,8 @@ mod block_accessor;
 mod entity_accessor;
 mod storage_accessor;
 
+use std::{borrow::Cow, collections::HashSet, io::Cursor};
+
 use super::super::{
     execution::{
         CommandSource, SteelArgumentType, SteelCommandContext, SteelCommandRuntime, argument,
@@ -12,7 +14,10 @@ use super::super::{
     registration::CommandRegistration,
 };
 use crate::command::brigadier::{ArgumentType, CommandNodeBuilder, CommandSyntaxError};
-use simdnbt::owned::{NbtList, NbtTag};
+use simdnbt::{
+    borrow::{BaseNbtCompound, read_compound},
+    owned::{NbtCompound, NbtList, NbtTag},
+};
 use steel_utils::nbt::NbtPath;
 use steel_utils::{Identifier, translations};
 
@@ -21,15 +26,16 @@ type Ctx = SteelCommandContext<CommandSource>;
 
 pub(super) const PATH_ARG: &str = "path";
 pub(super) const SCALE_ARG: &str = "scale";
+pub(super) const NBT_ARG: &str = "nbt";
 
-struct Accessor {
-    get: fn() -> Builder,
-    merge: fn() -> Builder,
-    modify: fn() -> Builder,
-    remove: fn() -> Builder,
+pub struct Accessor {
+    pub get: fn() -> Builder,
+    pub merge: fn() -> Builder,
+    pub modify: fn() -> Builder,
+    pub remove: fn() -> Builder,
 }
 
-const TARGET_ACCESSORS: [Accessor; 3] = [
+pub const TARGET_ACCESSORS: [Accessor; 3] = [
     Accessor {
         get: block_accessor::get_target,
         merge: block_accessor::merge_target,
@@ -50,18 +56,47 @@ const TARGET_ACCESSORS: [Accessor; 3] = [
     },
 ];
 
+pub const SOURCE_ACCESSORS: [Accessor; 3] = [
+    Accessor {
+        get: block_accessor::get_source,
+        merge: block_accessor::merge_source,
+        modify: block_accessor::modify_source,
+        remove: block_accessor::remove_source,
+    },
+    Accessor {
+        get: entity_accessor::get_source,
+        merge: entity_accessor::merge_source,
+        modify: entity_accessor::modify_source,
+        remove: entity_accessor::remove_source,
+    },
+    Accessor {
+        get: storage_accessor::get_source,
+        merge: storage_accessor::merge_source,
+        modify: storage_accessor::modify_source,
+        remove: storage_accessor::remove_source,
+    },
+];
+
 pub(super) fn registration() -> CommandRegistration<CommandSource> {
     CommandRegistration::new(Identifier::vanilla_static("data"), |_| command())
 }
 
 fn command() -> Builder {
-    literal("data").then(
-        TARGET_ACCESSORS
-            .into_iter()
-            .fold(literal("get"), |builder, accessor| {
-                builder.then((accessor.get)())
-            }),
-    )
+    literal("data")
+        .then(
+            TARGET_ACCESSORS
+                .into_iter()
+                .fold(literal("get"), |builder, accessor| {
+                    builder.then((accessor.get)())
+                }),
+        )
+        .then(
+            TARGET_ACCESSORS
+                .into_iter()
+                .fold(literal("merge"), |builder, accessor| {
+                    builder.then((accessor.merge)())
+                }),
+        )
 }
 
 pub(super) fn path_scale_args(
@@ -96,6 +131,42 @@ pub(super) fn process_numeric_arg(tag: NbtTag, scale: f64) -> Option<i32> {
     };
 
     Some((val * scale).floor() as i32)
+}
+
+/// Recursively merge NbtCompounds, while overriding data that is present in target and source.
+fn merge_compounds(target: &NbtCompound, source: &NbtCompound) -> NbtCompound {
+    let source_keys: HashSet<Cow<'_, str>> = source.keys().map(|s| s.to_str()).collect();
+    let target_keys: HashSet<Cow<'_, str>> = target.keys().map(|s| s.to_str()).collect();
+
+    let mut result = NbtCompound::new();
+
+    for (key, value) in target.clone() {
+        let key_str = key.to_str();
+
+        if source_keys.contains(&key_str) {
+            if let Some(source_value) = source.get(&key_str) {
+                if let (NbtTag::Compound(target_comp), NbtTag::Compound(source_comp)) =
+                    (value, source_value)
+                {
+                    let merged = merge_compounds(&target_comp, &source_comp);
+                    result.insert(key, NbtTag::Compound(merged));
+                } else {
+                    result.insert(key, source_value.clone());
+                }
+            }
+        } else {
+            result.insert(key, value);
+        }
+    }
+
+    for (key, value) in source.clone() {
+        let key_str = key.to_str();
+        if !target_keys.contains(&key_str) {
+            result.insert(key, value);
+        }
+    }
+
+    result
 }
 
 /// Takes a NbtTag and a NbtPath and returns a single Tag at that path.
