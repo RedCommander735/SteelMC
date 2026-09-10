@@ -17,9 +17,7 @@ use steel_utils::{BlockPos, BlockStateId, types::UpdateFlags};
 use crate::{
     behavior::{
         BlockBehavior, blocks::vegetation::bonemealable::Bonemealable, context::BlockPlaceContext,
-    },
-    entity::ai::path::PathComputationType,
-    world::{LevelReader, ScheduledTickAccess, World},
+    }, block_entity::SharedBlockEntity, entity::ai::path::PathComputationType, world::{LevelReader, ScheduledTickAccess, World},
 };
 
 const MAX_AGE: u8 = 2;
@@ -123,6 +121,7 @@ impl BlockBehavior for CocoaBlock {
         &self,
         _block: BlockRef,
         _state: BlockStateId,
+        _block_entity: Option<SharedBlockEntity>,
         _include_data: bool,
     ) -> Option<ItemStack> {
         Some(ItemStack::new(&vanilla_items::COCOA_BEANS))

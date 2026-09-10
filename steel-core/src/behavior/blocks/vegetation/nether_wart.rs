@@ -20,8 +20,7 @@ use crate::{
             Vegetation,
             vegetation_block::{survival_update_shape, vegetation_can_survive},
         },
-    },
-    world::{LevelReader, ScheduledTickAccess, World},
+    }, block_entity::SharedBlockEntity, world::{LevelReader, ScheduledTickAccess, World},
 };
 
 const AGE: &IntProperty = &BlockStateProperties::AGE_3;
@@ -86,6 +85,7 @@ impl BlockBehavior for NetherWartBlock {
         &self,
         _block: BlockRef,
         _state: BlockStateId,
+        _block_entity: Option<SharedBlockEntity>,
         _include_data: bool,
     ) -> Option<ItemStack> {
         Some(ItemStack::new(&vanilla_items::NETHER_WART))

@@ -22,8 +22,7 @@ use crate::{
             default_surviving_state,
             vegetation_block::{survival_update_shape, vegetation_can_survive},
         },
-    },
-    world::{LevelAccessor, LevelReader, ScheduledTickAccess, World},
+    }, block_entity::SharedBlockEntity, world::{LevelAccessor, LevelReader, ScheduledTickAccess, World},
 };
 
 const AGE: &IntProperty = &BlockStateProperties::AGE_7;
@@ -170,6 +169,7 @@ impl BlockBehavior for StemBlock {
         &self,
         _block: BlockRef,
         _state: BlockStateId,
+        _block_entity: Option<SharedBlockEntity>,
         _include_data: bool,
     ) -> Option<ItemStack> {
         Some(ItemStack::new(self.seed))
@@ -449,6 +449,7 @@ mod tests {
             .get_clone_item_stack(
                 &vanilla_blocks::PUMPKIN_STEM,
                 vanilla_blocks::PUMPKIN_STEM.default_state(),
+                None,
                 false,
             )
             .expect("pumpkin stem has a clone item");
@@ -456,6 +457,7 @@ mod tests {
             .get_clone_item_stack(
                 &vanilla_blocks::MELON_STEM,
                 vanilla_blocks::MELON_STEM.default_state(),
+                None,
                 false,
             )
             .expect("melon stem has a clone item");
