@@ -24,12 +24,12 @@ use std::{
 };
 
 use glam::DVec3;
-use simdnbt::owned::NbtCompound;
+use simdnbt::{borrow::NbtCompound, owned::NbtCompound as OwnedNbtCompound};
 use steel_registry::entity_data::EntityPose;
 use steel_registry::entity_type::EntityDimensions;
 use steel_registry::vanilla_entities;
-use steel_utils::locks::SyncMutex;
 use steel_utils::{BlockPos, BlockStateId, WorldAabb};
+use steel_utils::{UuidExt, locks::SyncMutex};
 use text_components::TextComponent;
 use uuid::Uuid;
 
@@ -378,7 +378,7 @@ pub struct EntityBase {
     /// Unique network ID for this entity (session-local).
     id: i32,
     /// Persistent UUID for this entity.
-    uuid: Uuid,
+    uuid: SyncMutex<Uuid>,
     /// The world this entity is in.
     world: SyncMutex<Weak<World>>,
     /// Current vanilla movement state.
@@ -403,6 +403,130 @@ impl EntityBase {
     pub fn new(id: i32, position: DVec3, dimensions: EntityDimensions, world: Weak<World>) -> Self {
         Self::new_with_state(id, EntityBaseState::new(position, dimensions), world)
     }
+
+    /// Loads an entity base with all relevant data from an NbtCompound
+    ///
+    /// Mirrors vanilla `Entity.load`
+    pub fn load(&self, nbt: &OwnedNbtCompound) {
+        if let Some(motion_list) = nbt.list("Motion") {
+            if let Some(motion) = motion_list.doubles()
+                && motion.len() == 3
+            {
+                self.set_velocity(DVec3::from_slice(&motion));
+            } else {
+                self.set_velocity(DVec3::ZERO);
+            }
+        } else {
+            self.set_velocity(DVec3::ZERO);
+        }
+
+        self.state.lock().needs_velocity_sync = true;
+
+        self.set_fall_distance(nbt.double("fall_distance").unwrap_or(0.0));
+
+        self.set_remaining_fire_ticks(i32::from(nbt.short("Fire").unwrap_or(0)));
+
+        self.set_on_ground(nbt.byte("OnGround").unwrap_or(0) != 0);
+
+        self.set_invulnerable(nbt.byte("Invulnerable").unwrap_or(0) != 0);
+
+        self.set_portal_cooldown(nbt.int("PortalCooldown").unwrap_or(0));
+
+        if let Some(uuid_data) = nbt.int_array("UUID") {
+            if let Some(uuid) = Uuid::from_int_array(uuid_data) {
+                *self.uuid.lock() = uuid;
+            }
+        }
+
+        if let Some(pos_list) = nbt.list("Pos") {
+            if let Some(pos) = pos_list.doubles()
+                && pos.len() == 3
+            {
+                self.try_set_position(DVec3::from_slice(&pos));
+            } else {
+                self.try_set_position(DVec3::ZERO);
+            }
+        } else {
+            self.try_set_position(DVec3::ZERO);
+        };
+
+        self.set_old_position_to_current();
+
+        if let Some(rotation_list) = nbt.list("Rotation") {
+            if let Some(rotation) = rotation_list.floats()
+                && rotation.len() == 2
+            {
+                self.set_rotation((rotation[0], rotation[1]));
+            } else {
+                self.set_rotation((0., 0.));
+            }
+        } else {
+            self.set_rotation((0., 0.));
+        }
+
+        self.set_old_rotation_to_current();
+
+        self.set_custom_name(
+            nbt.string("CustomName")
+                .map(|s| TextComponent::plain(s.to_string())),
+        );
+        self.set_custom_name_visible(nbt.byte("CustomNameVisible").unwrap_or(0) != 0);
+
+        self.set_silent(nbt.byte("Silent").unwrap_or(0) != 0);
+        self.set_no_gravity(nbt.byte("NoGravity").unwrap_or(0) != 0);
+        self.set_glowing(nbt.byte("Glowing").unwrap_or(0) != 0);
+
+        self.set_ticks_frozen(nbt.int("TicksFrozen").unwrap_or(0));
+        self.set_visual_fire(nbt.byte("HasVisualFire").unwrap_or(0) != 0);
+
+        self.set_custom_data(
+            nbt.get("data")
+                .map(|t| t.compound().unwrap_or(&OwnedNbtCompound::new()))
+                .unwrap_or(&OwnedNbtCompound::new())
+                .clone(),
+        );
+
+        let save_data = self.save_data.lock();
+
+        save_data.tags.clear();
+
+        if let Some(Some(tags)) = nbt.list("Tags").map(|t| t.strings()) {
+            tags.iter().for_each(|tag| {
+                save_data.add_tag(tag.to_string());
+            });
+        }
+    }
+
+    /*
+    * tick_count: 0,
+    position,
+    old_position: position,
+    last_known_position: None,
+    last_known_speed: DVec3::ZERO,
+    velocity: DVec3::ZERO,
+    rotation: (0.0, 0.0),
+    old_rotation: (0.0, 0.0),
+    pose: EntityPose::Standing,
+    dimensions,
+    bounding_box: Self::make_bounding_box(position, dimensions),
+    movement_flags: EntityMovementFlags::new(),
+    ground_contact: EntityGroundContact::airborne(),
+    movement_progress: EntityMovementProgress::new(),
+    fire_freeze: EntityFireFreezeState::new(),
+    in_block_state: None,
+    fluid_contact: EntityFluidContact::default(),
+    was_eye_in_water: false,
+    piston_movement: EntityPistonMovement::new(),
+    fall_distance: 0.0,
+    stuck_speed_multiplier: DVec3::ZERO,
+    no_physics: false,
+    needs_velocity_sync: false,
+    hurt_marked: false,
+    */
+
+    /* Sample internal cow nbt
+    Compound(NbtCompound { values: [(m"Pos", List(Double([11.263020756621941, 126.0, -20.400155409781757]))), (m"Motion", List(Double([0.0, -0.0784000015258789, 0.0]))), (m"Rotation", List(Float([11.321411, 0.0]))), (m"fall_distance", Double(0.0)), (m"Fire", Short(0)), (m"Air", Short(300)), (m"OnGround", Byte(1)), (m"Invulnerable", Byte(0)), (m"PortalCooldown", Int(0)), (m"UUID", IntArray([-630304273, 2107067847, -1982961818, 1639668504])), (m"CustomName", String(m"asd")), (m"Health", Float(10.0)), (m"DeathTime", Short(0)), (m"AbsorptionAmount", Float(0.0)), (m"current_impulse_context_reset_grace_time", Int(0)), (m"attributes", List(Compound([NbtCompound { values: [(m"id", String(m"minecraft:armor")), (m"base", Double(0.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:armor_toughness")), (m"base", Double(0.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:attack_knockback")), (m"base", Double(0.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:burning_time")), (m"base", Double(1.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:explosion_knockback_resistance")), (m"base", Double(0.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:entity_interaction_range")), (m"base", Double(3.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:fall_damage_multiplier")), (m"base", Double(1.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:follow_range")), (m"base", Double(16.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:gravity")), (m"base", Double(0.08))] }, NbtCompound { values: [(m"id", String(m"minecraft:jump_strength")), (m"base", Double(0.41999998688697815))] }, NbtCompound { values: [(m"id", String(m"minecraft:knockback_resistance")), (m"base", Double(0.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:max_absorption")), (m"base", Double(0.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:max_health")), (m"base", Double(10.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:movement_efficiency")), (m"base", Double(0.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:movement_speed")), (m"base", Double(0.20000000298023224))] }, NbtCompound { values: [(m"id", String(m"minecraft:oxygen_bonus")), (m"base", Double(0.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:safe_fall_distance")), (m"base", Double(3.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:scale")), (m"base", Double(1.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:step_height")), (m"base", Double(0.6))] }, NbtCompound { values: [(m"id", String(m"minecraft:tempt_range")), (m"base", Double(10.0))] }, NbtCompound { values: [(m"id", String(m"minecraft:water_movement_efficiency")), (m"base", Double(0.0))] }]))), (m"FallFlying", Byte(0)), (m"CanPickUpLoot", Byte(0)), (m"PersistenceRequired", Byte(1)), (m"LeftHanded", Byte(0)), (m"Age", Int(0)), (m"ForcedAge", Int(0)), (m"AgeLocked", Byte(0)), (m"InLove", Int(0)), (m"variant", String(m"minecraft:temperate")), (m"sound_variant", String(m"minecraft:moody"))] })
+     */
 
     /// Creates a new `EntityBase` with a randomly generated UUID and explicit state.
     #[must_use]
@@ -445,7 +569,7 @@ impl EntityBase {
     ) -> Self {
         Self {
             id,
-            uuid,
+            uuid: SyncMutex::new(uuid),
             world: SyncMutex::new(world),
             state: SyncMutex::new(state),
             save_data: SyncMutex::new(EntityBaseSaveData::new()),
@@ -483,8 +607,8 @@ impl EntityBase {
 
     /// Gets the entity's UUID.
     #[inline]
-    pub const fn uuid(&self) -> Uuid {
-        self.uuid
+    pub fn uuid(&self) -> Uuid {
+        self.uuid.lock().clone()
     }
 
     /// Gets the entity's current position.
@@ -734,7 +858,7 @@ impl EntityBase {
     }
 
     /// Returns a snapshot of vanilla custom data.
-    pub fn custom_data(&self) -> NbtCompound {
+    pub fn custom_data(&self) -> OwnedNbtCompound {
         self.save_data.lock().custom_data.clone()
     }
 
@@ -1108,6 +1232,7 @@ impl EntityBase {
         let callback = self.level_callback.lock().clone();
         callback.validate_move(old_pos, pos)?;
         self.set_position_local_unchecked(pos);
+        // TODO Update waypoints?
         if let Err(error) = callback.on_move_committed(old_pos, pos) {
             self.set_position_local_unchecked(old_pos);
             return Err(error);
@@ -1373,7 +1498,7 @@ impl EntityBase {
     }
 
     /// Replaces vanilla custom data.
-    pub fn set_custom_data(&self, custom_data: NbtCompound) {
+    pub fn set_custom_data(&self, custom_data: OwnedNbtCompound) {
         self.save_data.lock().custom_data = custom_data;
     }
 

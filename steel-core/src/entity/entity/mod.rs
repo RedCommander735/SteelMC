@@ -1,5 +1,10 @@
-use super::*;
+use std::io::Cursor;
+
+use simdnbt::borrow::read_compound as read_borrowed_compound;
+
 use crate::entity::leash::Leashable;
+
+use super::*;
 
 /// Vanilla `Entity.refreshDimensions` small-entity limit: only entities at most
 /// this wide and tall (in blocks) get their position fudged after growing.
@@ -69,6 +74,21 @@ impl<T: Entity> EntityEventSource for T {
 pub trait Entity: EntityEventSource + ErasedType + Send + Sync + 'static {
     /// Returns a reference to the entity's shared vanilla base fields.
     fn base(&self) -> &EntityBase;
+
+    fn load(&self, nbt: NbtCompound) {
+        self.base().load(&nbt);
+
+        self.set_air_supply(i32::from(
+            nbt.short("Air").unwrap_or(self.max_air_supply() as i16),
+        ));
+
+        let mut bytes = Vec::new();
+        nbt.write(&mut bytes);
+        let borrowed = read_borrowed_compound(&mut Cursor::new(bytes.as_slice()))
+            .expect("test nbt should reborrow");
+
+        self.load_additional(BorrowedNbtCompoundView::from(borrowed));
+    }
 
     /// Gets the entity type containing tracking range, dimensions, etc.
     fn entity_type(&self) -> EntityTypeRef;
@@ -2847,7 +2867,7 @@ pub trait Entity: EntityEventSource + ErasedType + Send + Sync + 'static {
     }
 
     /// Returns a snapshot of this entity's vanilla custom data.
-    fn custom_data(&self) -> NbtCompound {
+    fn custom_data(&self) -> BorrowedNbtCompoundView {
         self.base().custom_data()
     }
 

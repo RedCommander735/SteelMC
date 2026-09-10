@@ -15,6 +15,13 @@ pub trait LivingEntity: Entity {
     /// damage cooldown, and death animation counters.
     fn living_base(&self) -> &LivingEntityBase;
 
+    fn load(&self, nbt: NbtCompound) {
+        let rot = self.base().rotation();
+
+        self.set_y_head_rot(rot.1);
+        self.set_y_body_rot(rot.1);
+    }
+
     /// Returns vanilla living body/head rotation state.
     fn living_rotation_state(&self) -> LivingRotationState {
         self.living_base().rotation_state()

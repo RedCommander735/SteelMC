@@ -3,10 +3,12 @@ use super::super::super::execution::{
 };
 use crate::command::brigadier::{CommandNodeBuilder, CommandSyntaxError};
 use crate::command::builtins::data::{
-    PATH_ARG, SCALE_ARG, get_single_tag, path_scale_args, process_numeric_arg, process_path_arg,
+    NBT_ARG, PATH_ARG, SCALE_ARG, get_single_tag, merge_compounds, path_scale_args,
+    process_numeric_arg, process_path_arg,
 };
 use crate::entity::SharedEntity;
 use simdnbt::ToNbtTag;
+use simdnbt::borrow::BaseNbtCompound;
 use simdnbt::owned::NbtTag;
 use steel_utils::nbt::NbtPath;
 use steel_utils::text::command_nbt_component;
@@ -50,6 +52,8 @@ fn get_data(
     let entity = context.entity(&arg)?;
 
     let tag = entity.nbt_for_data_compare().to_nbt_tag();
+
+    println!("{:?}", &tag);
 
     context
         .source()
@@ -114,6 +118,65 @@ fn get_numeric_value(
     }
 }
 
+pub(super) fn merge_target() -> Builder {
+    literal(ACCESSOR_KEYWORD)
+    //     TODO Implement entity merging (then uncomment code below)
+    //     .then(
+    //     argument(TARGET_ARG, SteelArgumentType::block_pos()).then(
+    //         argument(NBT_ARG, SteelArgumentType::nbt_compound())
+    //             .executes(move |ctx| merge_data(ctx, TARGET_ARG.to_string())),
+    //     ),
+    // )
+}
+pub(super) fn merge_source() -> Builder {
+    literal(ACCESSOR_KEYWORD)
+    //     TODO Implement entity merging (then uncomment code below)
+    //     .then(
+    //     argument(SOURCE_ARG, SteelArgumentType::block_pos()).then(
+    //         argument(NBT_ARG, SteelArgumentType::nbt_compound())
+    //             .executes(move |ctx| merge_data(ctx, TARGET_ARG.to_string())),
+    //     ),
+    // )
+}
+
+fn merge_data(
+    context: &SteelCommandContext<CommandSource>,
+    arg: String,
+) -> Result<i32, CommandSyntaxError> {
+    let source = context.source();
+    let entity = context.entity(&arg)?;
+    let nbt_compound = context.nbt_compound(NBT_ARG)?.clone();
+
+    let old_data = entity.nbt_for_data_compare();
+
+    let merged = merge_compounds(&old_data, &nbt_compound);
+
+    if old_data == merged {
+        return Err(CommandSyntaxError::dynamic(TextComponent::from(
+            &translations::COMMANDS_DATA_MERGE_FAILED,
+        )));
+    }
+
+    let mut buffer: Vec<u8> = Vec::new();
+
+    source.send_success(&modified_success(&entity), true);
+    Ok(1)
+}
+
+pub(super) fn set_data(
+    compound: BaseNbtCompound<'_>,
+    source: &CommandSource,
+    entity: &SharedEntity,
+) -> Result<(), CommandSyntaxError> {
+    if entity.as_player().is_none() {
+        // TODO Implement Entity.load()
+    }
+
+    Err(CommandSyntaxError::dynamic(TextComponent::from(
+        &translations::COMMANDS_DATA_ENTITY_INVALID,
+    )))
+}
+
 fn print_success(data: &NbtTag, entity: &SharedEntity) -> TextComponent {
     translations::COMMANDS_DATA_ENTITY_QUERY
         .message([
@@ -139,11 +202,14 @@ fn print_success_scaled(
         .component()
 }
 
-pub(super) fn merge_target() -> Builder {
-    literal(ACCESSOR_KEYWORD)
-}
-pub(super) fn merge_source() -> Builder {
-    literal(ACCESSOR_KEYWORD)
+fn modified_success(entity: &SharedEntity) -> TextComponent {
+    translations::COMMANDS_DATA_BLOCK_MODIFIED
+        .message([
+            TextComponent::plain("test".to_string()),
+            TextComponent::plain("test".to_string()),
+            TextComponent::plain("test".to_string()),
+        ])
+        .component()
 }
 
 pub(super) fn modify_target() -> Builder {
