@@ -329,7 +329,7 @@ fn lifecycle_state_tracks_pending_world_change_tokens() {
 
 #[test]
 fn killed_player_respawn_can_retain_admission_ownership() {
-    let dimensions = EntityDimensions::new(0.6, 1.8, 1.62);
+    let dimensions = vanilla_entities::PLAYER.dimensions;
     let base = EntityBase::new(1, DVec3::ZERO, dimensions, Weak::<World>::new());
     base.set_removed(RemovalReason::Killed);
 
@@ -602,7 +602,7 @@ fn base_tick_advances_powder_snow_and_fire_state() {
 
 #[test]
 fn player_respawn_reset_restores_fresh_base_state_and_preserves_tags() {
-    let dimensions = EntityDimensions::new(0.6, 1.8, 1.62);
+    let dimensions = vanilla_entities::PLAYER.dimensions;
     let base = EntityBase::new(1, DVec3::new(1.0, 64.0, 1.0), dimensions, Weak::new());
 
     base.set_velocity(DVec3::new(0.4, -0.2, 0.3));
@@ -638,7 +638,7 @@ fn player_respawn_reset_restores_fresh_base_state_and_preserves_tags() {
     base.set_position_local(DVec3::new(3.0, 64.0, 1.0));
     assert!(base.begin_pending_world_change().is_some());
 
-    let reset_dimensions = EntityDimensions::new(0.6, 1.8, 1.62);
+    let reset_dimensions = vanilla_entities::PLAYER.dimensions;
     base.reset_for_player_respawn(reset_dimensions);
 
     let reset_position = DVec3::new(3.0, 64.0, 1.0);
@@ -1266,6 +1266,7 @@ fn base_tick_lava_contact_dampens_fall_distance() {
 
     base.set_fall_distance(8.0);
     base.set_fluid_contact(EntityFluidContact::from_parts(0.0, 0.25, false, false));
+    base.set_first_tick(false);
     base.dampen_fall_distance_in_lava();
 
     assert_f64_close(base.fall_distance(), 4.0);
@@ -1298,6 +1299,7 @@ fn water_reset_runs_before_lava_fall_distance_damping() {
 
     base.set_fall_distance(8.0);
     base.set_fluid_contact(EntityFluidContact::from_parts(0.25, 0.25, false, false));
+    base.set_first_tick(false);
     base.reset_fall_distance_in_water();
     base.dampen_fall_distance_in_lava();
 
