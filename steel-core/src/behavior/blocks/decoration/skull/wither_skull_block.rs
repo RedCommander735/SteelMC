@@ -1,11 +1,13 @@
 use crate::behavior::blocks::SkullBlock;
 use crate::behavior::blocks::decoration::skull::abstract_skull_block::AbstractSkullBlock;
 use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockPlaceContext};
+use crate::block_entity::SharedBlockEntity;
 use crate::entity::ai::path::PathComputationType;
 use crate::world::World;
 use std::sync::{Arc, Weak};
 use steel_macros::block_behavior;
 use steel_registry::blocks::BlockRef;
+use steel_registry::item_stack::ItemStack;
 use steel_utils::{BlockPos, BlockStateId};
 
 /// Behavior for wither skull blocks.
@@ -53,6 +55,17 @@ impl BlockBehavior for WitherSkullBlock {
         state: BlockStateId,
     ) -> BlockEntityCreation {
         self.base.new_block_entity(level, pos, state)
+    }
+
+    fn get_clone_item_stack(
+        &self,
+        block: BlockRef,
+        state: BlockStateId,
+        block_entity: Option<SharedBlockEntity>,
+        include_data: bool,
+    ) -> Option<ItemStack> {
+        self.base
+            .get_clone_item_stack(block, state, block_entity, include_data)
     }
 }
 

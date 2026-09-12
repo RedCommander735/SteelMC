@@ -1,14 +1,16 @@
 use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockPlaceContext};
-use crate::block_entity::BLOCK_ENTITIES;
+use crate::block_entity::entities::SkullBlockEntity;
+use crate::block_entity::{BLOCK_ENTITIES, SharedBlockEntity};
 use crate::entity::ai::path::PathComputationType;
 use crate::world::{SignalGetter, World};
 use std::sync::{Arc, Weak};
 use steel_registry::blocks::BlockRef;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
 use steel_registry::blocks::properties::{BlockStateProperties, BoolProperty};
-use steel_registry::vanilla_block_entity_types;
+use steel_registry::item_stack::ItemStack;
+use steel_registry::{REGISTRY, vanilla_block_entity_types};
 use steel_utils::types::UpdateFlags;
-use steel_utils::{BlockPos, BlockStateId};
+use steel_utils::{BlockPos, BlockStateId, Downcast};
 
 const POWERED: &BoolProperty = &BlockStateProperties::POWERED;
 
@@ -64,5 +66,22 @@ pub(super) trait AbstractSkullBlock: BlockBehavior {
             pos,
             state,
         ))
+    }
+
+    fn default_get_clone_item_stack(
+        &self,
+        block: BlockRef,
+        state: BlockStateId,
+        block_entity: Option<SharedBlockEntity>,
+        include_data: bool,
+    ) -> Option<ItemStack> {
+        if !include_data {
+            return Some(ItemStack::new(REGISTRY.items.by_block(block)));
+        }
+
+        let block_entity = block_entity?;
+        let skull_block_entity = block_entity.downcast_ref::<SkullBlockEntity>()?;
+
+        Some(skull_block_entity.skull_as_item(state))
     }
 }
