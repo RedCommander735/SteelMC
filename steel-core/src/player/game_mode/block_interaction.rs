@@ -197,7 +197,9 @@ impl Player {
 
         let include_data = self.has_infinite_materials() && packet.include_data;
 
-        let Some(item_stack) = behavior.get_clone_item_stack(block, state, block_entity, include_data) else {
+        let Some(item_stack) =
+            behavior.get_clone_item_stack(block, state, block_entity, include_data)
+        else {
             return;
         };
 

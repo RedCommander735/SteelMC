@@ -20,7 +20,9 @@ use crate::{
             Vegetation,
             vegetation_block::{survival_update_shape, vegetation_can_survive},
         },
-    }, block_entity::SharedBlockEntity, world::{LevelReader, ScheduledTickAccess, World},
+    },
+    block_entity::SharedBlockEntity,
+    world::{LevelReader, ScheduledTickAccess, World},
 };
 
 const AGE: &IntProperty = &BlockStateProperties::AGE_3;

@@ -16,7 +16,9 @@ use crate::{
     behavior::{
         BlockBehavior, BlockPlaceContext,
         blocks::vegetation::{BambooStalkBlock, bonemealable::Bonemealable},
-    }, block_entity::SharedBlockEntity, world::{LevelReader, ScheduledTickAccess, World},
+    },
+    block_entity::SharedBlockEntity,
+    world::{LevelReader, ScheduledTickAccess, World},
 };
 
 /// Behavior for the Bamboo Sapling Block

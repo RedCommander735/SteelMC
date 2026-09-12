@@ -17,7 +17,10 @@ use steel_utils::{BlockPos, BlockStateId, types::UpdateFlags};
 use crate::{
     behavior::{
         BlockBehavior, blocks::vegetation::bonemealable::Bonemealable, context::BlockPlaceContext,
-    }, block_entity::SharedBlockEntity, entity::ai::path::PathComputationType, world::{LevelReader, ScheduledTickAccess, World},
+    },
+    block_entity::SharedBlockEntity,
+    entity::ai::path::PathComputationType,
+    world::{LevelReader, ScheduledTickAccess, World},
 };
 
 const MAX_AGE: u8 = 2;

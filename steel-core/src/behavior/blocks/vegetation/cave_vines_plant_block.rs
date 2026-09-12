@@ -180,6 +180,7 @@ mod tests {
             .get_clone_item_stack(
                 &vanilla_blocks::CAVE_VINES_PLANT,
                 vanilla_blocks::CAVE_VINES_PLANT.default_state(),
+                None,
                 false,
             )
             .expect("cave vines plants have a vanilla clone item");

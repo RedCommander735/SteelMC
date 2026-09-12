@@ -19,7 +19,9 @@ use steel_utils::{
     types::{InteractionHand, UpdateFlags},
 };
 
-use crate::{behavior::block::drop_from_block_interact_loot_table, block_entity::SharedBlockEntity};
+use crate::{
+    behavior::block::drop_from_block_interact_loot_table, block_entity::SharedBlockEntity,
+};
 use crate::{
     behavior::{
         BlockBehavior, BlockPlaceContext, InteractionResult, InventoryAccess,
