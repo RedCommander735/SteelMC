@@ -1,7 +1,6 @@
 use crate::behavior::blocks::decoration::skull::abstract_skull_block::AbstractSkullBlock;
 use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockLootContext, BlockPlaceContext};
 use crate::block_entity::SharedBlockEntity;
-use crate::block_entity::entities::SkullBlockEntity;
 use crate::entity::ai::path::PathComputationType;
 use crate::world::World;
 use std::sync::{Arc, Weak};
@@ -11,7 +10,7 @@ use steel_registry::blocks::BlockRef;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
 use steel_registry::blocks::properties::{BlockStateProperties, IntProperty};
 use steel_registry::item_stack::ItemStack;
-use steel_utils::{BlockPos, BlockStateId, Downcast};
+use steel_utils::{BlockPos, BlockStateId};
 
 const ROTATION_16: &IntProperty = &BlockStateProperties::ROTATION_16;
 
@@ -72,14 +71,7 @@ impl BlockBehavior for SkullBlock {
         state: BlockStateId,
         context: &BlockLootContext<'_>,
     ) -> Option<Vec<ItemStack>> {
-        let block_entity = context.block_entity()?;
-
-        // TODO do not drop/apply profile on default skulls
-
-        let skull_block_entity = block_entity.downcast_ref::<SkullBlockEntity>()?;
-
-        let item = skull_block_entity.skull_as_item(state);
-        Some(vec![item])
+        self.default_get_drops(state, context)
     }
 }
 

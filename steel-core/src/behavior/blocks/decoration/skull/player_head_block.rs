@@ -2,14 +2,13 @@ use crate::behavior::blocks::SkullBlock;
 use crate::behavior::blocks::decoration::skull::abstract_skull_block::AbstractSkullBlock;
 use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockLootContext, BlockPlaceContext};
 use crate::block_entity::SharedBlockEntity;
-use crate::block_entity::entities::SkullBlockEntity;
 use crate::entity::ai::path::PathComputationType;
 use crate::world::World;
 use std::sync::{Arc, Weak};
 use steel_macros::block_behavior;
 use steel_registry::blocks::BlockRef;
 use steel_registry::item_stack::ItemStack;
-use steel_utils::{BlockPos, BlockStateId, Downcast};
+use steel_utils::{BlockPos, BlockStateId};
 
 /// Behavior for player head blocks.
 #[block_behavior]
@@ -72,11 +71,7 @@ impl BlockBehavior for PlayerHeadBlock {
         state: BlockStateId,
         context: &BlockLootContext<'_>,
     ) -> Option<Vec<ItemStack>> {
-        let block_entity = context.block_entity()?;
-        let skull_block_entity = block_entity.downcast_ref::<SkullBlockEntity>()?;
-
-        let item = skull_block_entity.skull_as_item(state);
-        Some(vec![item])
+        self.base.get_drops(state, context)
     }
 }
 

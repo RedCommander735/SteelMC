@@ -1,6 +1,6 @@
 use crate::behavior::blocks::decoration::skull::abstract_skull_block::AbstractSkullBlock;
 use crate::behavior::{
-    BlockBehavior, BlockEntityCreation, BlockPlaceContext, BlockStateBehaviorExt,
+    BlockBehavior, BlockEntityCreation, BlockLootContext, BlockPlaceContext, BlockStateBehaviorExt,
 };
 use crate::block_entity::SharedBlockEntity;
 use crate::entity::ai::path::PathComputationType;
@@ -65,6 +65,14 @@ impl BlockBehavior for WallSkullBlock {
         include_data: bool,
     ) -> Option<ItemStack> {
         self.default_get_clone_item_stack(block, state, block_entity, include_data)
+    }
+
+    fn get_drops(
+        &self,
+        state: BlockStateId,
+        context: &BlockLootContext<'_>,
+    ) -> Option<Vec<ItemStack>> {
+        self.default_get_drops(state, context)
     }
 }
 

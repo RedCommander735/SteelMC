@@ -1,4 +1,4 @@
-use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockPlaceContext};
+use crate::behavior::{BlockBehavior, BlockEntityCreation, BlockLootContext, BlockPlaceContext};
 use crate::block_entity::entities::SkullBlockEntity;
 use crate::block_entity::{BLOCK_ENTITIES, SharedBlockEntity};
 use crate::entity::ai::path::PathComputationType;
@@ -83,5 +83,17 @@ pub(super) trait AbstractSkullBlock: BlockBehavior {
         let skull_block_entity = block_entity.downcast_ref::<SkullBlockEntity>()?;
 
         Some(skull_block_entity.skull_as_item(state))
+    }
+
+    fn default_get_drops(
+        &self,
+        state: BlockStateId,
+        context: &BlockLootContext,
+    ) -> Option<Vec<ItemStack>> {
+        let block_entity = context.block_entity()?;
+        let skull_block_entity = block_entity.downcast_ref::<SkullBlockEntity>()?;
+
+        let item = skull_block_entity.skull_as_item(state);
+        Some(vec![item])
     }
 }
