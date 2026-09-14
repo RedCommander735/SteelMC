@@ -41,11 +41,11 @@ impl BlockBehavior for WallSkullBlock {
         source_block: BlockRef,
         moved_by_piston: bool,
     ) {
-        self.handle_skull_neighbor_changed(state, world, pos, source_block, moved_by_piston);
+        self.default_handle_neighbor_changed(state, world, pos, source_block, moved_by_piston);
     }
 
     fn is_pathfindable(&self, state: BlockStateId, computation_type: PathComputationType) -> bool {
-        self.is_skull_pathfindable(state, computation_type)
+        self.default_is_pathfindable(state, computation_type)
     }
 
     fn new_block_entity(

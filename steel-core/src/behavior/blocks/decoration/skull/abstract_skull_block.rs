@@ -28,7 +28,7 @@ pub(super) trait AbstractSkullBlock: BlockBehavior {
         })
     }
 
-    fn handle_skull_neighbor_changed(
+    fn default_handle_neighbor_changed(
         &self,
         state: BlockStateId,
         world: &Arc<World>,
@@ -46,7 +46,7 @@ pub(super) trait AbstractSkullBlock: BlockBehavior {
         }
     }
 
-    fn is_skull_pathfindable(
+    fn default_is_pathfindable(
         &self,
         _state: BlockStateId,
         _computation_type: PathComputationType,
