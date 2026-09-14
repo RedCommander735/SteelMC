@@ -6,12 +6,12 @@
     )
 )]
 
-use std::sync::Arc;
-use simdnbt::owned::NbtCompound;
 use crate::command::brigadier::{
     CommandContext, CommandNodeBuilder, CommandRedirectTarget, CommandRuntime, CommandSyntaxError,
     ContextChain,
 };
+use simdnbt::owned::NbtCompound;
+use std::sync::Arc;
 use steel_registry::damage_type::DamageTypeRef;
 use steel_registry::{
     enchantment::EnchantmentRef, entity_type::EntityTypeRef, item_stack::ItemStack,

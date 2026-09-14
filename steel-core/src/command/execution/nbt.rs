@@ -1,7 +1,9 @@
 //! NBT path command arguments.
 
-use simdnbt::owned::{NbtCompound};
-use steel_utils::nbt::{parse_nbt_path_argument as parse_path, NbtPath, parse_snbt_compound_argument as parse_snbt};
+use simdnbt::owned::NbtCompound;
+use steel_utils::nbt::{
+    NbtPath, parse_nbt_path_argument as parse_path, parse_snbt_compound_argument as parse_snbt,
+};
 use text_components::TextComponent;
 
 use crate::command::brigadier::{CommandSyntaxError, CommandSyntaxErrorKind, StringReader};
@@ -23,7 +25,9 @@ pub(super) fn parse_nbt_path(reader: &mut StringReader<'_>) -> Result<NbtPath, C
     }
 }
 
-pub(super) fn parse_snbt_compound(reader: &mut StringReader<'_>) -> Result<NbtCompound, CommandSyntaxError> {
+pub(super) fn parse_snbt_compound(
+    reader: &mut StringReader<'_>,
+) -> Result<NbtCompound, CommandSyntaxError> {
     match parse_snbt(reader.remaining()) {
         Ok((compound, consumed)) => {
             if !reader.advance_bytes(consumed) {

@@ -1,17 +1,13 @@
-use std::borrow::Cow;
-use std::collections::HashSet;
-
 use super::super::super::execution::{
     CommandSource, SteelArgumentType, SteelCommandContext, SteelCommandRuntime, argument, literal,
 };
 use crate::command::brigadier::{CommandNodeBuilder, CommandSyntaxError};
 use crate::command::builtins::data::{
-    NBT_ARG, PATH_ARG, SCALE_ARG, get_single_tag, merge_compounds,
-    path_scale_args, process_numeric_arg, process_path_arg,
+    NBT_ARG, PATH_ARG, SCALE_ARG, get_single_tag, merge_compounds, path_scale_args,
+    process_numeric_arg, process_path_arg,
 };
-use simdnbt::borrow::BaseNbtCompound;
+use simdnbt::ToNbtTag;
 use simdnbt::owned::{NbtCompound, NbtTag};
-use simdnbt::{Mutf8Str, Mutf8String, ToNbtTag};
 use steel_utils::nbt::NbtPath;
 use steel_utils::text::command_nbt_component;
 use steel_utils::{BlockPos, translations};
@@ -98,9 +94,7 @@ fn get_single(
 
     let tag = get_tag(source, block_pos)?.to_nbt_tag();
 
-    let s_tag = if let Some(t) = get_single_tag(&tag, &path)? {
-        t
-    } else {
+    let Some(s_tag) = get_single_tag(&tag, &path)? else {
         return Err(CommandSyntaxError::dynamic(
             translations::COMMANDS_DATA_GET_UNKNOWN
                 .message([TextComponent::plain(path.as_str().to_string())])
@@ -182,15 +176,15 @@ pub(super) fn set_data(
     source: &CommandSource,
     pos: BlockPos,
 ) -> Result<(), CommandSyntaxError> {
-    if let Some(entity) = source.world().get_block_entity(pos) {
-        if let Some(world) = entity.get_level() {
-            entity.load_with_owned_components(&compound);
-            entity.set_changed();
-            world.send_block_updated(pos);
-            return Ok(());
-        }
+    if let Some(entity) = source.world().get_block_entity(pos)
+        && let Some(world) = entity.get_level()
+    {
+        let _ = entity.load_with_owned_components(&compound);
+        entity.set_changed();
+        world.send_block_updated(pos);
+        return Ok(());
     }
-    
+
     Err(CommandSyntaxError::dynamic(TextComponent::from(
         &translations::COMMANDS_DATA_BLOCK_INVALID,
     )))

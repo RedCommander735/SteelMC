@@ -4,7 +4,7 @@ mod block_accessor;
 mod entity_accessor;
 mod storage_accessor;
 
-use std::{borrow::Cow, collections::HashSet, io::Cursor};
+use std::borrow::Cow;
 
 use super::super::{
     execution::{
@@ -14,10 +14,8 @@ use super::super::{
     registration::CommandRegistration,
 };
 use crate::command::brigadier::{ArgumentType, CommandNodeBuilder, CommandSyntaxError};
-use simdnbt::{
-    borrow::{BaseNbtCompound, read_compound},
-    owned::{NbtCompound, NbtList, NbtTag},
-};
+use rustc_hash::FxHashSet;
+use simdnbt::owned::{NbtCompound, NbtList, NbtTag};
 use steel_utils::nbt::NbtPath;
 use steel_utils::{Identifier, translations};
 
@@ -133,10 +131,10 @@ pub(super) fn process_numeric_arg(tag: NbtTag, scale: f64) -> Option<i32> {
     Some((val * scale).floor() as i32)
 }
 
-/// Recursively merge NbtCompounds, while overriding data that is present in target and source.
+/// Recursively merge `NbtCompounds`, while overriding data that is present in target and source.
 fn merge_compounds(target: &NbtCompound, source: &NbtCompound) -> NbtCompound {
-    let source_keys: HashSet<Cow<'_, str>> = source.keys().map(|s| s.to_str()).collect();
-    let target_keys: HashSet<Cow<'_, str>> = target.keys().map(|s| s.to_str()).collect();
+    let source_keys: FxHashSet<Cow<'_, str>> = source.keys().map(|s| s.to_str()).collect();
+    let target_keys: FxHashSet<Cow<'_, str>> = target.keys().map(|s| s.to_str()).collect();
 
     let mut result = NbtCompound::new();
 
@@ -148,7 +146,7 @@ fn merge_compounds(target: &NbtCompound, source: &NbtCompound) -> NbtCompound {
                 if let (NbtTag::Compound(target_comp), NbtTag::Compound(source_comp)) =
                     (value, source_value)
                 {
-                    let merged = merge_compounds(&target_comp, &source_comp);
+                    let merged = merge_compounds(&target_comp, source_comp);
                     result.insert(key, NbtTag::Compound(merged));
                 } else {
                     result.insert(key, source_value.clone());
@@ -169,7 +167,7 @@ fn merge_compounds(target: &NbtCompound, source: &NbtCompound) -> NbtCompound {
     result
 }
 
-/// Takes a NbtTag and a NbtPath and returns a single Tag at that path.
+/// Takes a `NbtTag` and a `NbtPath` and returns a single Tag at that path.
 /// Mirrors vanilla `DataCommands.getSingleTag`
 // This is also used by the function command
 pub(crate) fn get_single_tag(

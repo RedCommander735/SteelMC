@@ -25,6 +25,7 @@ use crate::command::brigadier::{
     CommandSyntaxErrorKind, ContainsPrimitiveArgumentValue, PrimitiveArgumentValue, StringReader,
     SuggestionsBuilder,
 };
+use crate::command::execution::nbt::parse_snbt_compound;
 use crate::command::incorrectly_typed_argument;
 use crate::command::protocol::protocol_argument_type;
 use crate::entity::{ENTITIES, EntityAnchor};
@@ -47,7 +48,6 @@ use steel_utils::{
     types::GameType,
 };
 use text_components::TextComponent;
-use crate::command::execution::nbt::parse_snbt_compound;
 
 /// Axes selected by vanilla's coordinate swizzle argument.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -536,7 +536,10 @@ argument_value_wrapper!(
     "steel:command/value/component"
 );
 argument_value_wrapper!(NbtPathValue(NbtPath), "steel:command/value/nbt_path");
-argument_value_wrapper!(NbtCompoundValue(NbtCompound), "steel:command/value/nbt_path");
+argument_value_wrapper!(
+    NbtCompoundValue(NbtCompound),
+    "steel:command/value/nbt_path"
+);
 argument_value_wrapper!(
     IdentifierValue(Identifier),
     "steel:command/value/identifier"

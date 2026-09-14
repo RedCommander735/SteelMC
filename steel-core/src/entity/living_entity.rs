@@ -15,7 +15,18 @@ pub trait LivingEntity: Entity {
     /// damage cooldown, and death animation counters.
     fn living_base(&self) -> &LivingEntityBase;
 
+    /// Loads an entity base with all relevant data from an `NbtCompound`
+    ///
+    /// Mirrors vanilla `Entity.load`
     fn load(&self, nbt: NbtCompound) {
+        self.default_load_data(nbt);
+        self.load_data();
+    }
+
+    /// The actual implementation for loading the data into the entity
+    ///
+    /// Mirrors vanilla `Entity.load`
+    fn load_data(&self) {
         let rot = self.base().rotation();
 
         self.set_y_head_rot(rot.1);

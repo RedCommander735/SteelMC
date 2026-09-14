@@ -59,7 +59,7 @@ fn get_data(
 
     context
         .source()
-        .send_success(&print_success(&tag, &id), false);
+        .send_success(&print_success(&tag, id), false);
 
     Ok(1)
 }
@@ -81,7 +81,7 @@ fn get_single(
     context: &SteelCommandContext<CommandSource>,
     arg: &str,
 ) -> Result<(NbtTag, Identifier, NbtPath), CommandSyntaxError> {
-    let id = context.identifier(&arg)?.clone();
+    let id = context.identifier(arg)?.clone();
     let domain = context.source().world().domain();
     let path = context.nbt_path(PATH_ARG)?.clone();
 
@@ -94,12 +94,10 @@ fn get_single(
         }
         .to_nbt_tag();
 
-    let s_tag = if let Some(t) = get_single_tag(&tag, &path)? {
-        t
-    } else {
+    let Some(s_tag) = get_single_tag(&tag, &path)? else {
         return Err(CommandSyntaxError::dynamic(
             translations::COMMANDS_DATA_GET_UNKNOWN
-                .message([TextComponent::plain((&path).as_str().to_string())])
+                .message([TextComponent::plain(path.as_str().to_string())])
                 .component(),
         ));
     };
