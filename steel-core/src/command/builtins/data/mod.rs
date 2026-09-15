@@ -4,7 +4,7 @@ mod block_accessor;
 mod entity_accessor;
 mod storage_accessor;
 
-use std::{borrow::Cow, collections::HashSet};
+use std::borrow::Cow;
 
 use super::super::{
     execution::{
@@ -14,6 +14,7 @@ use super::super::{
     registration::CommandRegistration,
 };
 use crate::command::brigadier::{ArgumentType, CommandNodeBuilder, CommandSyntaxError};
+use rustc_hash::FxHashSet;
 use simdnbt::owned::{NbtCompound, NbtList, NbtTag};
 use steel_utils::nbt::NbtPath;
 use steel_utils::{Identifier, translations};
@@ -132,13 +133,13 @@ pub(super) fn process_numeric_arg(tag: NbtTag, scale: f64) -> Option<i32> {
 
 /// Recursively merge `NbtCompounds`, while overriding data that is present in target and source.
 fn merge_compounds(target: &NbtCompound, source: &NbtCompound) -> NbtCompound {
-    let source_keys: HashSet<String> = source.keys().map(|s| s.to_string()).collect();
-    let target_keys: HashSet<String> = target.keys().map(|s| s.to_string()).collect();
+    let source_keys: FxHashSet<Cow<'_, str>> = source.keys().map(|k| k.to_str()).collect();
+    let target_keys: FxHashSet<Cow<'_, str>> = target.keys().map(|k| k.to_str()).collect();
 
     let mut result = NbtCompound::new();
 
     for (key, value) in target.clone() {
-        let key_str = key.to_string();
+        let key_str = key.to_str();
 
         if source_keys.contains(&key_str) {
             if let Some(source_value) = source.get(&key_str) {
@@ -157,7 +158,7 @@ fn merge_compounds(target: &NbtCompound, source: &NbtCompound) -> NbtCompound {
     }
 
     for (key, value) in source.clone() {
-        let key_str = key.to_string();
+        let key_str = key.to_str();
         if !target_keys.contains(&key_str) {
             result.insert(key, value);
         }

@@ -157,14 +157,11 @@ fn merge_data(
     let id = context.identifier(&arg)?;
     let domain = context.source().world().domain();
 
-    let command_storage =
-        if let Some(command_storage) = context.source().server().command_storage.get(domain) {
-            command_storage
-        } else {
-            return Err(CommandSyntaxError::dynamic(TextComponent::from(
-                &translations::COMMANDS_DATA_MERGE_FAILED,
-            )));
-        };
+    let Some(command_storage) = context.source().server().command_storage.get(domain) else {
+        return Err(CommandSyntaxError::dynamic(TextComponent::from(
+            &translations::COMMANDS_DATA_MERGE_FAILED,
+        )));
+    };
 
     let old_data = command_storage.get(id);
     let nbt_compound = context.nbt_compound(NBT_ARG)?.clone();
@@ -179,7 +176,7 @@ fn merge_data(
 
     command_storage.set(id.clone(), merged);
 
-    source.send_success(&modified_success(&id), true);
+    source.send_success(&modified_success(id), true);
     Ok(1)
 }
 
