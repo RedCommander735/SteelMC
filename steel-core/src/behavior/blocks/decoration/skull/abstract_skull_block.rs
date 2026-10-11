@@ -14,7 +14,7 @@ use steel_utils::{BlockPos, BlockStateId, Downcast};
 
 const POWERED: &BoolProperty = &BlockStateProperties::POWERED;
 
-/// Shared server behavior inherited from vanilla's `AbstractSkullBlock`.
+/// Shared server behavior for `AbstractSkullBlock`.
 pub(super) trait AbstractSkullBlock: BlockBehavior {
     #[must_use]
     fn state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId>;
@@ -75,14 +75,19 @@ pub(super) trait AbstractSkullBlock: BlockBehavior {
         block_entity: Option<SharedBlockEntity>,
         include_data: bool,
     ) -> Option<ItemStack> {
+        let item = ItemStack::new(REGISTRY.items.by_block(block));
         if !include_data {
-            return Some(ItemStack::new(REGISTRY.items.by_block(block)));
+            return Some(item);
         }
 
-        let block_entity = block_entity?;
-        let skull_block_entity = block_entity.downcast_ref::<SkullBlockEntity>()?;
+        let Some(skull_block_entity) = block_entity
+            .as_ref()
+            .and_then(|block_entity| block_entity.downcast_ref::<SkullBlockEntity>())
+        else {
+            return Some(item);
+        };
 
-        Some(skull_block_entity.skull_as_item(state))
+        Some(skull_block_entity.skull_as_picked_item(state))
     }
 
     fn default_get_drops(
@@ -93,7 +98,7 @@ pub(super) trait AbstractSkullBlock: BlockBehavior {
         let block_entity = context.block_entity()?;
         let skull_block_entity = block_entity.downcast_ref::<SkullBlockEntity>()?;
 
-        let item = skull_block_entity.skull_as_item(state);
+        let item = skull_block_entity.skull_as_dropped_item(state);
         Some(vec![item])
     }
 }

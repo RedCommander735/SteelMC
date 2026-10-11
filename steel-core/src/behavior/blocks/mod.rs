@@ -7,6 +7,7 @@ mod building;
 mod colored;
 mod container;
 mod decoration;
+mod face_attached_horizontal_directional_block;
 mod falling;
 mod fluid;
 mod portal;
@@ -26,14 +27,15 @@ pub use building::{
     WeatheringCopperFullBlock, WeatheringCopperGrateBlock, WeatheringCopperSlabBlock,
     WeatheringCopperStairBlock, WeatheringCopperTrapDoorBlock, WebBlock, WetSpongeBlock,
 };
-pub use colored::StainedGlassPaneBlock;
+pub use colored::{StainedGlassBlock, StainedGlassPaneBlock};
 pub use container::{
-    AnvilBlock, BarrelBlock, BeehiveBlock, BlastFurnaceBlock, ChiseledBookShelfBlock,
-    CraftingTableBlock, EnderChestBlock, FurnaceBlock, ShulkerBoxBlock, SmokerBlock,
+    AnvilBlock, BarrelBlock, BeaconBlock, BeehiveBlock, BlastFurnaceBlock, ChiseledBookShelfBlock,
+    CraftingTableBlock, EnderChestBlock, FurnaceBlock, GrindstoneBlock, ShulkerBoxBlock,
+    SmokerBlock,
 };
 pub use decoration::{
     BannerBlock, CakeBlock, CandleBlock, CandleCakeBlock, CeilingHangingSignBlock, ChainBlock,
-    EndRodBlock, JukeboxBlock, LanternBlock, PiglinWallSkullBlock, PlayerHeadBlock,
+    EndRodBlock, FlowerPotBlock, JukeboxBlock, LanternBlock, PiglinWallSkullBlock, PlayerHeadBlock,
     PlayerWallHeadBlock, SkullBlock, StandingSignBlock, TorchBlock, WallBannerBlock,
     WallHangingSignBlock, WallSignBlock, WallSkullBlock, WallTorchBlock,
     WeatheringCopperChainBlock, WeatheringLanternBlock, WitherSkullBlock, WitherWallSkullBlock,

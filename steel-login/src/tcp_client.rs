@@ -61,7 +61,7 @@ use uuid::Uuid;
 use crate::pre_play_state::{PacketSequenceError, PrePlayPacket, PrePlayState};
 
 const MAX_TICKS_BEFORE_LOGIN: u64 = 600;
-const SLOW_LOGIN_DISCONNECT_FLUSH_TIMEOUT: Duration = Duration::from_secs(1);
+const DISCONNECT_FLUSH_TIMEOUT: Duration = Duration::from_secs(1);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct LoginDeadline {
@@ -382,10 +382,10 @@ impl JavaTcpClient {
         mut sender_recv: UnboundedReceiver<OutboundPacket>,
     ) {
         let cancel_token = self.cancel_token.clone();
-        let network_writer = self.network_writer.clone();
+        let network_writer = Arc::clone(&self.network_writer);
         let id = self.id;
         let mut connection_updates_recv = self.connection_updates.subscribe();
-        let connection_updated = self.connection_updated.clone();
+        let connection_updated = Arc::clone(&self.connection_updated);
 
         self.task_tracker.spawn(async move {
             let mut connection = None;
@@ -506,7 +506,7 @@ impl JavaTcpClient {
         let id = self.id;
         let mut connection_updates_recv = self.connection_updates.subscribe();
 
-        let self_clone = self.clone();
+        let self_clone = Arc::clone(self);
 
         self.task_tracker.spawn(async move {
             let mut connection = None;
@@ -551,7 +551,8 @@ impl JavaTcpClient {
                                 }
                             }
                             LoginOperationResult::Completed(Err(err)) => {
-                                log::warn!("Failed to get packet from client {id}: {err}");
+                                self_clone.reject_packet_decode_error(&err).await;
+                                break;
                             }
                             LoginOperationResult::Cancelled => break,
                             LoginOperationResult::TimedOut => {
@@ -595,7 +596,7 @@ impl JavaTcpClient {
             drop(connection_updates_recv);
 
             if let Some(connection) = connection {
-                let server = self_clone.server.clone();
+                let server = Arc::clone(&self_clone.server);
                 drop(self_clone);
 
                 match &*connection {
@@ -640,19 +641,26 @@ impl JavaTcpClient {
         .await
     }
 
-    pub(crate) async fn disconnect_slow_login(&self) {
-        let reason =
-            TextComponent::translated(translations::MULTIPLAYER_DISCONNECT_SLOW_LOGIN.msg());
-        if timeout(SLOW_LOGIN_DISCONNECT_FLUSH_TIMEOUT, self.kick(reason))
+    /// Kicks with `reason`, falling back to closing the socket if the write stalls.
+    async fn kick_with_flush_timeout(&self, reason: TextComponent, context: &str) {
+        if timeout(DISCONNECT_FLUSH_TIMEOUT, self.kick(reason))
             .await
             .is_err()
         {
             log::debug!(
-                "Best-effort slow-login disconnect write for client {} timed out",
+                "Best-effort {context} disconnect write for client {} timed out",
                 self.id
             );
             self.close();
         }
+    }
+
+    pub(crate) async fn disconnect_slow_login(&self) {
+        self.kick_with_flush_timeout(
+            TextComponent::translated(translations::MULTIPLAYER_DISCONNECT_SLOW_LOGIN.msg()),
+            "slow-login",
+        )
+        .await;
     }
 
     async fn process_packet(&self, packet: RawPacket) -> Result<ConnectionAction, PacketError> {
@@ -822,6 +830,20 @@ impl JavaTcpClient {
         ))
         .await;
         ConnectionAction::none()
+    }
+
+    /// Kick + close when `process_packet` returns `PacketError` (bad decode / unexpected id).
+    /// Matches vanilla `Connection.exceptionCaught` (`disconnect.genericReason`).
+    pub(crate) async fn reject_packet_decode_error(&self, error: &PacketError) {
+        log::warn!("Failed to get packet from client {}: {error}", self.id);
+        self.kick_with_flush_timeout(
+            TextComponent::translated(
+                translations::DISCONNECT_GENERIC_REASON
+                    .message([format!("Internal Exception: {error}")]),
+            ),
+            "packet-decode",
+        )
+        .await;
     }
 
     /// Kicks the client with a given reason.
