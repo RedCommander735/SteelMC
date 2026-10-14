@@ -36,10 +36,10 @@ pub use container::{
 pub use decoration::{
     BannerBlock, CakeBlock, CandleBlock, CandleCakeBlock, CeilingHangingSignBlock, ChainBlock,
     EndRodBlock, FlowerPotBlock, JukeboxBlock, LanternBlock, PiglinWallSkullBlock, PlayerHeadBlock,
-    PlayerWallHeadBlock, SkullBlock, StandingSignBlock, TorchBlock, WallBannerBlock,
-    WallHangingSignBlock, WallSignBlock, WallSkullBlock, WallTorchBlock,
-    WeatheringCopperChainBlock, WeatheringLanternBlock, WitherSkullBlock, WitherWallSkullBlock,
-    is_facing_front_text,
+    PlayerWallHeadBlock, Skull, SkullBlock, SkullData, SkullType, SkullTypeRef, StandingSignBlock,
+    TorchBlock, WallBannerBlock, WallHangingSignBlock, WallSignBlock, WallSkullBlock,
+    WallTorchBlock, WeatheringCopperChainBlock, WeatheringLanternBlock, WitherSkullBlock,
+    WitherWallSkullBlock, is_facing_front_text,
 };
 pub use falling::{ConcretePowderBlock, DragonEggBlock, FallingBlock, SandBlock};
 pub use fluid::{BubbleColumnBlock, LiquidBlock};

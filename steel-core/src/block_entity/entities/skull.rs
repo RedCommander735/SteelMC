@@ -1,3 +1,4 @@
+use crate::behavior::blocks::SkullData;
 use crate::block_entity::{BlockEntity, BlockEntityBase};
 use crate::world::World;
 use simdnbt::borrow::{BaseNbtCompound as BorrowedNbtCompound, NbtCompound as NbtCompoundView};
@@ -24,13 +25,7 @@ const CUSTOM_NAME_NBT_KEY: &str = "custom_name";
 /// Stores player profile, note block sound and custom name
 pub struct SkullBlockEntity {
     base: BlockEntityBase,
-    state: SyncMutex<SkullState>,
-}
-
-struct SkullState {
-    owner: Option<ResolvableProfile>,
-    note_block_sound: Option<Identifier>,
-    custom_name: Option<TextComponent>,
+    state: SyncMutex<SkullData>,
 }
 
 // SAFETY: This key is owned by Steel and uniquely identifies `SkullBlockEntity`.
@@ -44,11 +39,7 @@ impl SkullBlockEntity {
     pub fn new(level: Weak<World>, pos: BlockPos, state: BlockStateId) -> Self {
         Self {
             base: BlockEntityBase::new(&vanilla_block_entity_types::SKULL, level, pos, state),
-            state: SyncMutex::new(SkullState {
-                owner: None,
-                note_block_sound: None,
-                custom_name: None,
-            }),
+            state: SyncMutex::new(SkullData::default()),
         }
     }
 
@@ -59,7 +50,8 @@ impl SkullBlockEntity {
 
     /// Builds the picked item form of a placed skull with all stored components.
     pub fn skull_as_picked_item(&self, state: BlockStateId) -> ItemStack {
-        self.skull_as_item(state, true)
+        let patch = self.state.lock().component_patch();
+        Self::skull_as_item(state, patch)
     }
 
     /// Builds the dropped item form of a placed skull. Only player heads keep their profile and
@@ -68,29 +60,18 @@ impl SkullBlockEntity {
         let block = state.get_block();
         let is_player_head = block.key() == vanilla_blocks::PLAYER_HEAD.key()
             || block.key() == vanilla_blocks::PLAYER_WALL_HEAD.key();
-        self.skull_as_item(state, is_player_head)
+        let data = self.state.lock();
+        let patch = if is_player_head {
+            data.component_patch()
+        } else {
+            data.custom_name_patch()
+        };
+        drop(data);
+        Self::skull_as_item(state, patch)
     }
 
-    fn skull_as_item(&self, state: BlockStateId, include_player_data: bool) -> ItemStack {
+    fn skull_as_item(state: BlockStateId, patch: DataComponentPatch) -> ItemStack {
         let block_item = REGISTRY.items.by_block(state.get_block());
-
-        let skull_state = self.state.lock();
-
-        let mut patch = DataComponentPatch::new();
-
-        if include_player_data {
-            if let Some(p) = skull_state.owner.clone() {
-                patch.set(PROFILE, p);
-            }
-            if let Some(s) = skull_state.note_block_sound.clone() {
-                patch.set(NOTE_BLOCK_SOUND, s);
-            }
-        }
-
-        if let Some(n) = skull_state.custom_name.clone() {
-            patch.set(CUSTOM_NAME, n);
-        }
-
         ItemStack::with_count_and_patch(block_item, 1, patch)
     }
 }
