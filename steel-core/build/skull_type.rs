@@ -33,12 +33,16 @@ pub fn build() -> String {
         })
         .collect();
 
+    let all_idents = skull_types_raw.keys().map(|key| to_block_ident(key));
+
     let output = quote! {
         use steel_registry::{blocks::BlockRef, vanilla_blocks};
         use steel_utils::Identifier;
-        use crate::behavior::blocks::SkullType;
+        use crate::behavior::blocks::{SkullType, SkullTypeRef};
 
         #(#skull_types)*
+
+        pub static ALL: &[SkullTypeRef] = &[#(&#all_idents),*];
     };
 
     output.to_string()

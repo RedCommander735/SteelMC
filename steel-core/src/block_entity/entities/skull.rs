@@ -1,4 +1,5 @@
-use crate::behavior::blocks::SkullData;
+use crate::behavior::blocks::{SkullData, SkullType};
+use crate::behavior::skull_types;
 use crate::block_entity::{BlockEntity, BlockEntityBase};
 use crate::world::World;
 use simdnbt::borrow::{BaseNbtCompound as BorrowedNbtCompound, NbtCompound as NbtCompoundView};
@@ -7,11 +8,8 @@ use simdnbt::{FromNbtTag, ToNbtTag};
 use std::sync::Weak;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
 use steel_registry::data_components::DataComponentPatch;
-use steel_registry::data_components::vanilla_components::{CUSTOM_NAME, NOTE_BLOCK_SOUND, PROFILE};
 use steel_registry::item_stack::ItemStack;
-use steel_registry::{
-    REGISTRY, RegistryEntry, ResolvableProfile, vanilla_block_entity_types, vanilla_blocks,
-};
+use steel_registry::{REGISTRY, ResolvableProfile, vanilla_block_entity_types};
 use steel_utils::locks::SyncMutex;
 use steel_utils::{BlockPos, BlockStateId, DowncastType, DowncastTypeKey, Identifier};
 use text_components::TextComponent;
@@ -48,6 +46,27 @@ impl SkullBlockEntity {
         self.state.lock().note_block_sound.clone()
     }
 
+    /// Returns a clone of the stored skull data
+    #[must_use]
+    pub fn data(&self) -> SkullData {
+        self.state.lock().clone()
+    }
+
+    /// Replaces the stored skull data and sends it to clients
+    pub fn set_data(&self, data: SkullData) {
+        {
+            let mut state = self.state.lock();
+            if *state == data {
+                return;
+            }
+            *state = data;
+        }
+        self.set_changed();
+        if let Some(world) = self.get_level() {
+            world.send_block_updated(self.base.pos);
+        }
+    }
+
     /// Builds the picked item form of a placed skull with all stored components.
     pub fn skull_as_picked_item(&self, state: BlockStateId) -> ItemStack {
         let patch = self.state.lock().component_patch();
@@ -57,9 +76,7 @@ impl SkullBlockEntity {
     /// Builds the dropped item form of a placed skull. Only player heads keep their profile and
     /// note block sound.
     pub fn skull_as_dropped_item(&self, state: BlockStateId) -> ItemStack {
-        let block = state.get_block();
-        let is_player_head = block.key() == vanilla_blocks::PLAYER_HEAD.key()
-            || block.key() == vanilla_blocks::PLAYER_WALL_HEAD.key();
+        let is_player_head = SkullType::from_block(state.get_block()) == Some(&skull_types::PLAYER);
         let data = self.state.lock();
         let patch = if is_player_head {
             data.component_patch()
@@ -116,8 +133,6 @@ impl BlockEntity for SkullBlockEntity {
 
     fn apply_components_from_item(&self, item: &ItemStack) {
         let mut state = self.state.lock();
-        state.owner = item.get(PROFILE).cloned();
-        state.note_block_sound = item.get(NOTE_BLOCK_SOUND).cloned();
-        state.custom_name = item.get(CUSTOM_NAME).cloned();
+        *state = SkullData::from_item(item);
     }
 }
